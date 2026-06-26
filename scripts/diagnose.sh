@@ -1,19 +1,16 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 # PerStream — self-diagnosing setup for Termux
 #
-# This script:
-#   1. Verifies Node + npm are installed
-#   2. Cleans any partial install
-#   3. Installs dependencies fresh (Termux-safe)
-#   4. Runs the seed script
-#   5. Runs the smoke test
-#   6. Reports what's missing if anything fails
+# Compatible with /bin/sh (dash, ash) and bash. No bash-specific features.
 #
-# Paste this whole block in Termux after extracting perstream.tar.gz.
+# 1. Verifies Node + npm are installed
+# 2. Cleans any partial install
+# 3. Installs dependencies fresh (Termux-safe)
+# 4. Runs the seed script
+# 5. Runs the smoke test
+# 6. Reports what's missing if anything fails
 
-set -e
-
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." 2>/dev/null || cd "$(dirname "$0")"
 
 echo ""
 echo "  ╔══════════════════════════════════════╗"
@@ -23,44 +20,55 @@ echo ""
 
 # ─── 1. Check Node ───
 if ! command -v node >/dev/null 2>&1; then
-  echo "✗ Node not installed. Installing..."
+  echo "Node not installed. Installing..."
   pkg install -y nodejs
 fi
-NODE_VERSION=$(node --version)
-echo "✓ Node: $NODE_VERSION"
+if ! command -v npm >/dev/null 2>&1; then
+  echo "npm not installed. Installing..."
+  pkg install -y nodejs
+fi
+NODE_VERSION=$(node --version 2>/dev/null || echo "missing")
+NPM_VERSION=$(npm --version 2>/dev/null || echo "missing")
+echo "Node: $NODE_VERSION"
+echo "npm:  $NPM_VERSION"
 
 # ─── 2. Check we're in the right dir ───
 if [ ! -f "README.md" ] || [ ! -d "backend" ]; then
-  echo "✗ Not in PerStream directory"
+  echo ""
+  echo "Not in PerStream directory"
   echo "  Run: cd ~/PerStream  (or wherever you extracted the bundle)"
+  echo "  Current dir: $(pwd)"
+  echo ""
+  ls -la
   exit 1
 fi
-echo "✓ In PerStream directory: $(pwd)"
+echo "In PerStream directory: $(pwd)"
 
 # ─── 3. Make sure backend/.env exists ───
 cd backend
 if [ ! -f ".env" ]; then
   if [ -f ".env.example" ]; then
     cp .env.example .env
-    echo "✓ Created .env from .env.example"
+    echo "Created .env from .env.example"
   else
-    echo "✗ No .env or .env.example found — bundle is broken"
+    echo "No .env or .env.example found — bundle is broken"
+    ls -la
     exit 1
   fi
 fi
 
 # ─── 4. Clean install ───
-if [ -d node_modules ]; then
-  echo "→ Removing old node_modules..."
+if [ -d "node_modules" ]; then
+  echo "Removing old node_modules..."
   rm -rf node_modules package-lock.json
 fi
 
-echo "→ Installing dependencies (this may take 1-3 minutes)..."
+echo "Installing dependencies (this may take 1-3 minutes)..."
 echo ""
-if ! npm install --no-audit --no-fund --omit=optional 2>&1 | tee /tmp/npm-install.log; then
+if ! npm install --no-audit --no-fund --omit=optional > /tmp/npm-install.log 2>&1; then
   echo ""
   echo "═══════════════════════════════════════"
-  echo "  ✗ npm install FAILED"
+  echo "  npm install FAILED"
   echo "═══════════════════════════════════════"
   echo ""
   echo "Last 30 lines of error:"
@@ -72,10 +80,12 @@ if ! npm install --no-audit --no-fund --omit=optional 2>&1 | tee /tmp/npm-instal
   echo "  rm -rf node_modules package-lock.json && npm install"
   exit 1
 fi
+echo ""
+echo "npm install complete"
 
 # ─── 5. Verify critical modules ───
 echo ""
-echo "→ Verifying modules..."
+echo "Verifying modules..."
 MISSING=""
 for mod in express cors dotenv sql.js multer nanoid; do
   if [ ! -d "node_modules/$mod" ]; then
@@ -83,31 +93,30 @@ for mod in express cors dotenv sql.js multer nanoid; do
   fi
 done
 if [ -n "$MISSING" ]; then
-  echo "✗ Missing modules:$MISSING"
+  echo "Missing modules:$MISSING"
   echo "  Try: cd backend && npm install --no-audit --no-fund --omit=optional"
   exit 1
 fi
-echo "✓ All required modules installed"
+echo "All required modules installed"
 
 # ─── 6. Seed ───
 echo ""
-echo "→ Seeding demo data..."
+echo "Seeding demo data..."
 cd ..
-if ! node scripts/seed.js 2>&1 | tee /tmp/seed.log; then
+if ! node scripts/seed.js > /tmp/seed.log 2>&1; then
   echo ""
-  echo "✗ seed.js failed. Output:"
+  echo "seed.js failed. Output:"
   cat /tmp/seed.log
   exit 1
 fi
 
 # ─── 7. Smoke test ───
 echo ""
-echo "→ Running smoke test (10 endpoint checks)..."
+echo "Running smoke test (10 endpoint checks)..."
 echo ""
-if ! node scripts/smoke-test.js 2>&1 | tee /tmp/smoke.log; then
+if ! node scripts/smoke-test.js 2>&1; then
   echo ""
-  echo "✗ smoke-test failed. Output:"
-  cat /tmp/smoke.log
+  echo "smoke-test.js failed. See output above."
   exit 1
 fi
 
@@ -119,7 +128,7 @@ echo "════════════════════════�
 echo ""
 echo "Next:"
 echo "  cd backend && node src/server.js     # start the backend"
-echo "  cd .. && ./scripts/demo.sh            # start + cloudflared tunnel"
+echo "  cd .. && sh scripts/demo.sh           # start + cloudflared tunnel"
 echo ""
 echo "Login credentials (seeded):"
 echo "  Creator:  demo-creator@perstream.fm"
