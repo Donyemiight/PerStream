@@ -25,7 +25,7 @@ tar --exclude='node_modules' \
     deploy \
     docs \
     scripts \
-    README.md LICENSE PUSH_NOW.md TERMUX_TROUBLESHOOTING.md
+    README.md LICENSE PUSH_NOW.md TERMUX_TROUBLESHOOTING.md HANDOFF.md
 
 echo "✅ Done: $OUT"
 echo "   Size: $(du -h "$OUT" | cut -f1)"
