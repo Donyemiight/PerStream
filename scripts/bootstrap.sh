@@ -37,6 +37,13 @@ mkdir -p "$TMPDIR"
 echo ""
 echo "→ Scratch dir: $TMPDIR (writable: $([ -w "$TMPDIR" ] && echo ✓ || echo ✗))"
 
+# Check disk space (need at least 100MB for node_modules)
+FREE_MB=$(df -m "$HOME" 2>/dev/null | tail -1 | awk '{print $4}')
+if [ -n "$FREE_MB" ] && [ "$FREE_MB" -lt 100 ]; then
+  echo "⚠ Only ${FREE_MB}MB free in $HOME. Need ~100MB for node_modules."
+  echo "  Clean up some files first: rm -rf ~/PerStream.old ~/PerStream.bak.*"
+fi
+
 # ─── 3. Try each URL until one works ───
 echo ""
 echo "→ Trying bundle URLs..."
