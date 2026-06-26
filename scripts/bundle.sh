@@ -16,17 +16,16 @@ tar --exclude='node_modules' \
     --exclude='.git' \
     --exclude='data/*.db' \
     --exclude='data/audio/*' \
-    --exclude='.env' \
     --exclude='*.log' \
     --exclude='*.placeholder.txt' \
     -czf "$OUT" \
-    backend/src backend/package.json backend/.env.example \
+    backend/src backend/package.json backend/.env.example backend/.env \
     frontend \
     contracts \
     deploy \
     docs \
     scripts \
-    README.md LICENSE
+    README.md LICENSE PUSH_NOW.md
 
 echo "✅ Done: $OUT"
 echo "   Size: $(du -h "$OUT" | cut -f1)"

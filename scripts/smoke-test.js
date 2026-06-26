@@ -1,8 +1,7 @@
 /**
  * PerStream — self-contained smoke test
  *
- * Boots the server in-process (via app.listen), hits every endpoint,
- * asserts the responses, then exits cleanly. No hanging servers.
+ * Boots the server in-process, hits every endpoint, asserts responses, exits.
  */
 
 process.env.PORT = process.env.PORT || '3099';
@@ -16,51 +15,55 @@ const fs = require('fs');
 // Reset DB for fresh test
 const DB_PATH = path.join(__dirname, '..', 'backend', 'data', 'test.db');
 try { fs.unlinkSync(DB_PATH); } catch {}
-try { fs.unlinkSync(DB_PATH + '-wal'); } catch {}
-try { fs.unlinkSync(DB_PATH + '-shm'); } catch {}
-
 process.env.DB_PATH = DB_PATH;
 process.env.AUDIO_DIR = path.join(__dirname, '..', 'backend', 'data', 'test-audio');
 process.env.PUBLIC_BASE_URL = `http://localhost:${process.env.PORT}`;
 
+const db = require('../backend/src/db');
 const app = require('../backend/src/server.js');
 
-const server = app.listen(process.env.PORT, async () => {
-  console.log(`\n[test] server on :${process.env.PORT}`);
-  let failures = 0;
-  let passed = 0;
+let failures = 0;
+let passed = 0;
 
-  function pass(name) { passed++; console.log(`  ✅ ${name}`); }
-  function fail(name, err) { failures++; console.log(`  ❌ ${name} — ${err}`); }
+function pass(name) { passed++; console.log(`  ✅ ${name}`); }
+function fail(name, err) { failures++; console.log(`  ❌ ${name} — ${err}`); }
 
-  function req(method, urlPath, body = null, headers = {}) {
-    return new Promise((resolve, reject) => {
-      const data = body ? JSON.stringify(body) : null;
-      const opts = {
-        method,
-        hostname: 'localhost',
-        port: process.env.PORT,
-        path: urlPath,
-        headers: {
-          ...(data ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } : {}),
-          ...headers,
-        },
-      };
-      const r = http.request(opts, (res) => {
-        let chunks = [];
-        res.on('data', c => chunks.push(c));
-        res.on('end', () => {
-          const text = Buffer.concat(chunks).toString();
-          let json = null;
-          try { json = JSON.parse(text); } catch {}
-          resolve({ status: res.statusCode, headers: res.headers, body: json, text });
-        });
+function req(method, urlPath, body = null, headers = {}) {
+  return new Promise((resolve, reject) => {
+    const data = body ? JSON.stringify(body) : null;
+    const opts = {
+      method,
+      hostname: 'localhost',
+      port: process.env.PORT,
+      path: urlPath,
+      headers: {
+        ...(data ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } : {}),
+        ...headers,
+      },
+    };
+    const r = http.request(opts, (res) => {
+      let chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => {
+        const text = Buffer.concat(chunks).toString();
+        let json = null;
+        try { json = JSON.parse(text); } catch {}
+        resolve({ status: res.statusCode, headers: res.headers, body: json, text });
       });
-      r.on('error', reject);
-      if (data) r.write(data);
-      r.end();
     });
-  }
+    r.on('error', reject);
+    if (data) r.write(data);
+    r.end();
+  });
+}
+
+async function main() {
+  await db.ready();
+  const server = await new Promise((resolve) => {
+    const s = app.listen(process.env.PORT, () => resolve(s));
+  });
+
+  console.log(`\n[test] server on :${process.env.PORT}`);
 
   // 1. Health
   try {
@@ -89,15 +92,13 @@ const server = app.listen(process.env.PORT, async () => {
 
   // 4. x402 stream without auth → 402
   try {
-    // First create a track via direct DB (since we don't have file upload)
-    const db = require('../backend/src/db');
     const track = db.createTrack({
       creatorId,
       title: 'Smoke test track',
       description: 'Test',
       audioUrl: '/api/tracks/audio/test.mp3',
       durationSec: 30,
-      pricePerSec: 300, // 0.0003 USDC
+      pricePerSec: 300,
     });
 
     const r = await req('GET', `/api/tracks/${track.id}/stream`);
@@ -107,12 +108,11 @@ const server = app.listen(process.env.PORT, async () => {
   } catch (e) { fail('GET 402', e.message); }
 
   // 5. Login listener
-  let listenerId, listenerWallet;
+  let listenerId;
   try {
     const r = await req('POST', '/api/auth/login', { email: 'test-listener@perstream.fm' });
     if (r.status === 200 && r.body.user) {
       listenerId = r.body.user.id;
-      listenerWallet = r.body.user.wallet;
       pass(`POST /api/auth/login (listener) → user ${listenerId.slice(-6)}`);
     } else fail('login listener', JSON.stringify(r));
   } catch (e) { fail('login listener', e.message); }
@@ -128,7 +128,6 @@ const server = app.listen(process.env.PORT, async () => {
   // 7. Listener starts session
   let sessionId;
   try {
-    const db = require('../backend/src/db');
     const track = db.listTracks({ creatorId })[0];
     const r = await req('POST', '/api/listen/start', { trackId: track.id }, { 'X-User-Id': listenerId });
     if (r.status === 200 && r.body.sessionId) {
@@ -163,6 +162,12 @@ const server = app.listen(process.env.PORT, async () => {
   } catch (e) { fail('dashboard', e.message); }
 
   console.log(`\n[test] ${passed} passed, ${failures} failed\n`);
+  db.flushSync();
   server.close();
   process.exit(failures > 0 ? 1 : 0);
+}
+
+main().catch(err => {
+  console.error('[test] fatal:', err);
+  process.exit(1);
 });

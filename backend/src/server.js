@@ -39,6 +39,12 @@ const wallet = require('./wallet');
 const meter = require('./meter');
 const arc = require('./arc');
 
+// Initialise DB before defining routes (async, but only blocks boot once)
+db.ready().catch(err => {
+  console.error('[fatal] DB init failed:', err);
+  process.exit(1);
+});
+
 const PORT = process.env.PORT || 3000;
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`;
 const AUDIO_DIR = process.env.AUDIO_DIR || path.join(__dirname, '..', 'data', 'audio');

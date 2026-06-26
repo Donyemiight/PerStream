@@ -7,10 +7,15 @@
  * Run: `node scripts/seed.js` from the perstream root.
  */
 
-require('dotenv').config({ path: require('path').join(__dirname, '..', 'backend', '.env') });
+// Resolve modules from backend/node_modules first so this script works when run
+// from the project root (`node scripts/seed.js`) instead of inside backend/.
+const path = require('path');
+const backendNodeModules = path.join(__dirname, '..', 'backend', 'node_modules');
+require.main.paths.unshift(backendNodeModules);
+
+require('dotenv').config({ path: path.join(__dirname, '..', 'backend', '.env') });
 
 const fs = require('fs');
-const path = require('path');
 
 const db = require('../backend/src/db');
 const wallet = require('../backend/src/wallet');
@@ -19,6 +24,7 @@ const arc = require('../backend/src/arc');
 const AUDIO_DIR = process.env.AUDIO_DIR || path.join(__dirname, '..', 'backend', 'data', 'audio');
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'backend', 'data', 'perstream.db');
 
+async function main() {
 console.log('[seed] starting...');
 console.log('[seed] DB:', DB_PATH);
 console.log('[seed] Audio dir:', AUDIO_DIR);
@@ -28,12 +34,15 @@ const dataDir = path.dirname(DB_PATH);
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 if (!fs.existsSync(AUDIO_DIR)) fs.mkdirSync(AUDIO_DIR, { recursive: true });
 
+// Initialise DB
+await db.ready();
+
 // ─── Seed creator ───
 const CREATOR_EMAIL = 'demo-creator@perstream.fm';
 let creator = db.getUserByEmail(CREATOR_EMAIL);
 
 if (!creator) {
-  const prov = wallet.provisionWallet({ email: CREATOR_EMAIL, handle: 'perstream-demo' });
+  const prov = await wallet.provisionWallet({ email: CREATOR_EMAIL, handle: 'perstream-demo' });
   creator = db.createUser({
     handle: 'perstream-demo',
     email: CREATOR_EMAIL,
@@ -49,7 +58,7 @@ if (!creator) {
 const LISTENER_EMAIL = 'demo-listener@perstream.fm';
 let listener = db.getUserByEmail(LISTENER_EMAIL);
 if (!listener) {
-  const prov = wallet.provisionWallet({ email: LISTENER_EMAIL, handle: 'demo-listener' });
+  const prov = await wallet.provisionWallet({ email: LISTENER_EMAIL, handle: 'demo-listener' });
   listener = db.createUser({
     handle: 'demo-listener',
     email: LISTENER_EMAIL,
@@ -127,3 +136,9 @@ console.log('\n[seed] done!');
 console.log('Creator login: email = demo-creator@perstream.fm');
 console.log('Listener login: email = demo-listener@perstream.fm');
 console.log('Tracks:', db.listTracks({ creatorId: creator.id }).length);
+}
+
+main().catch(err => {
+  console.error('[seed] fatal:', err);
+  process.exit(1);
+});

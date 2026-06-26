@@ -24,12 +24,13 @@ cd backend
 if [ ! -f .env ]; then
   echo "→ Creating .env from .env.example"
   cp .env.example .env
+  echo "  (Default mode is 'mock' — no Circle keys needed for demo)"
 fi
 
 # Install deps
 if [ ! -d node_modules ]; then
-  echo "→ Installing backend deps..."
-  npm install
+  echo "→ Installing backend deps (Termux-safe: no native modules)..."
+  npm install --no-audit --no-fund --omit=optional
 fi
 
 # Seed
