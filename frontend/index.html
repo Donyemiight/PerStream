@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PerStream — Every second, paid.</title>
+  <meta name="description" content="Per-second USDC streaming paywall for podcasts, built on Circle Nanopayments + Arc.">
+  <link rel="icon" type="image/svg+xml" href="assets/prism.svg">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="logo">
+      <img src="assets/prism.svg" alt="" width="28" height="28">
+      <span>PerStream</span>
+    </a>
+    <div class="nav-links">
+      <a href="listen.html">Listen</a>
+      <a href="creator.html">For creators</a>
+      <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </nav>
+
+  <main class="hero">
+    <div class="hero-inner">
+      <h1 class="hero-title">
+        Every second,<br>
+        <span class="hero-accent">paid.</span>
+      </h1>
+      <p class="hero-sub">
+        A per-second USDC streaming paywall for podcasts and long-form audio,
+        built on <strong>Circle Nanopayments</strong> + <strong>Arc</strong>.
+      </p>
+
+      <div class="hero-cta">
+        <a href="listen.html" class="btn btn-primary">Try the demo</a>
+        <a href="creator.html" class="btn btn-ghost">Become a creator</a>
+      </div>
+
+      <div class="hero-meta">
+        <span class="dot"></span> Live on Arc testnet · Mock mode for instant demo
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="prism-card">
+        <img src="assets/prism.svg" alt="" class="prism-art">
+        <div class="counter">
+          <div class="counter-label">USDC tick</div>
+          <div class="counter-value" id="demo-counter">0.0000</div>
+          <div class="counter-sub">per second · settled on Arc</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <section class="how">
+    <h2>How it works</h2>
+    <div class="how-grid">
+      <div class="how-card">
+        <div class="how-num">01</div>
+        <h3>Creator uploads</h3>
+        <p>Drop an MP3, set a price per second. Default 0.0003 USDC ≈ $1.08/hr.</p>
+      </div>
+      <div class="how-card">
+        <div class="how-num">02</div>
+        <h3>Listener signs in</h3>
+        <p>One-click email login. No MetaMask, no seed phrase. Embedded wallet via Circle Agent Stack.</p>
+      </div>
+      <div class="how-card">
+        <div class="how-num">03</div>
+        <h3>Press play</h3>
+        <p>Every second settles a gasless USDC micro-payment on Arc via x402 + Nanopayments.</p>
+      </div>
+      <div class="how-card">
+        <div class="how-num">04</div>
+        <h3>Creator earns</h3>
+        <p>Live earnings in the dashboard. From listener #1, no audience minimum.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="infra">
+    <h2>Built on</h2>
+    <div class="infra-grid">
+      <div class="infra-tag">Circle Nanopayments</div>
+      <div class="infra-tag">Circle Agent Stack</div>
+      <div class="infra-tag">x402 Protocol</div>
+      <div class="infra-tag">Arc L1</div>
+      <div class="infra-tag">USDC</div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div>
+      Built for the <strong>Lepton Agents Hackathon</strong> by
+      <a href="https://x.com/donYemiight" target="_blank" rel="noopener">@donYemiight</a>.
+    </div>
+    <div class="footer-meta">
+      <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener">Source</a> ·
+      <a href="docs/SPEC.md">Spec</a> ·
+      <a href="docs/PITCH.md">Pitch</a>
+    </div>
+  </footer>
+
+  <script>
+    // Animated demo counter on landing
+    const counter = document.getElementById('demo-counter');
+    let value = 0;
+    setInterval(() => {
+      value += 0.0003;
+      counter.textContent = value.toFixed(4);
+    }, 1000);
+  </script>
+</body>
+</html>

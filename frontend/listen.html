@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Listen — PerStream</title>
+  <link rel="icon" type="image/svg+xml" href="assets/prism.svg">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <nav class="nav">
+    <a href="index.html" class="logo">
+      <img src="assets/prism.svg" alt="" width="28" height="28">
+      <span>PerStream</span>
+    </a>
+    <div class="nav-links">
+      <a href="listen.html" class="active">Listen</a>
+      <a href="creator.html">For creators</a>
+    </div>
+  </nav>
+
+  <main class="listen-page">
+    <!-- Auth state -->
+    <section class="auth-bar" id="auth-bar">
+      <div id="auth-signed-out">
+        <span class="muted">Sign in to listen</span>
+        <button id="btn-login" class="btn btn-primary btn-sm">Sign in with email</button>
+      </div>
+      <div id="auth-signed-in" style="display:none;">
+        <span class="muted">Listening as</span>
+        <span class="wallet" id="auth-handle">—</span>
+        <span class="wallet-addr" id="auth-wallet">0x…</span>
+        <button id="btn-logout" class="btn btn-ghost btn-sm">Sign out</button>
+      </div>
+    </section>
+
+    <!-- Track list -->
+    <section class="tracks-section">
+      <h2>Available tracks</h2>
+      <div id="tracks-list" class="tracks-list">
+        <div class="loading">Loading tracks…</div>
+      </div>
+    </section>
+
+    <!-- Player (shown when a track is selected) -->
+    <section class="player-section" id="player-section" style="display:none;">
+      <div class="player-card">
+        <div class="player-header">
+          <div>
+            <div class="player-title" id="player-title">—</div>
+            <div class="player-meta">
+              <span id="player-creator">—</span> · <span id="player-price">—</span>
+            </div>
+          </div>
+          <div class="tick-display">
+            <div class="tick-label">USDC this session</div>
+            <div class="tick-value" id="tick-value">0.000000</div>
+          </div>
+        </div>
+
+        <audio id="audio" controls preload="metadata" style="width:100%; margin: 1rem 0;">
+          <source src="" type="audio/mpeg">
+          Your browser does not support audio playback.
+        </audio>
+
+        <div class="player-stats">
+          <div class="stat">
+            <div class="stat-label">Balance</div>
+            <div class="stat-value" id="stat-balance">0.000000 USDC</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Seconds played</div>
+            <div class="stat-value" id="stat-seconds">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Status</div>
+            <div class="stat-value" id="stat-status">Ready</div>
+          </div>
+        </div>
+
+        <div class="player-actions">
+          <button id="btn-deposit" class="btn btn-ghost btn-sm">+ Add 1 USDC</button>
+          <button id="btn-deposit-big" class="btn btn-ghost btn-sm">+ Add 5 USDC</button>
+        </div>
+
+        <div id="player-error" class="error" style="display:none;"></div>
+        <div id="x402-info" class="x402-info" style="display:none;">
+          <strong>x402 Payment Required</strong>
+          <pre id="x402-info-json"></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/app.js"></script>
+  <script>
+    // listen-page specific init
+    window.addEventListener('DOMContentLoaded', () => PerStream.initListenPage());
+  </script>
+</body>
+</html>

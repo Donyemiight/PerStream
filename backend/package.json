@@ -1,0 +1,25 @@
+{
+  "name": "perstream-backend",
+  "version": "0.1.0",
+  "description": "PerStream backend — x402 + Circle Nanopayments on Arc, per-second streaming paywall",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js",
+    "seed": "node ../scripts/seed.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "express-rate-limit": "^7.4.0",
+    "multer": "^1.4.5-lts.1",
+    "nanoid": "^5.0.7"
+  },
+  "license": "MIT"
+}

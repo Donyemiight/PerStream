@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creator dashboard — PerStream</title>
+  <link rel="icon" type="image/svg+xml" href="assets/prism.svg">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <nav class="nav">
+    <a href="index.html" class="logo">
+      <img src="assets/prism.svg" alt="" width="28" height="28">
+      <span>PerStream</span>
+    </a>
+    <div class="nav-links">
+      <a href="listen.html">Listen</a>
+      <a href="creator.html" class="active">For creators</a>
+    </div>
+  </nav>
+
+  <main class="creator-page">
+    <section class="auth-bar" id="auth-bar">
+      <div id="auth-signed-out">
+        <span class="muted">Sign in as creator</span>
+        <button id="btn-login" class="btn btn-primary btn-sm">Sign in</button>
+      </div>
+      <div id="auth-signed-in" style="display:none;">
+        <span class="muted">Creator</span>
+        <span class="wallet" id="auth-handle">—</span>
+        <button id="btn-logout" class="btn btn-ghost btn-sm">Sign out</button>
+      </div>
+    </section>
+
+    <!-- Earnings summary -->
+    <section class="earnings-card" id="earnings-section" style="display:none;">
+      <div class="earnings-main">
+        <div class="earnings-label">Live earnings (withdrawable)</div>
+        <div class="earnings-value" id="earnings-value">0.000000</div>
+        <div class="earnings-sub">USDC · settled on Arc</div>
+      </div>
+      <div class="earnings-actions">
+        <button id="btn-withdraw-all" class="btn btn-primary">Withdraw all</button>
+      </div>
+    </section>
+
+    <!-- Track upload -->
+    <section class="upload-section" id="upload-section" style="display:none;">
+      <h2>Upload a new track</h2>
+      <form id="upload-form" class="upload-form">
+        <div class="form-row">
+          <label>Title</label>
+          <input type="text" name="title" required placeholder="Episode 1 — The cold-start cliff">
+        </div>
+        <div class="form-row">
+          <label>Description</label>
+          <textarea name="description" rows="2" placeholder="Optional one-liner"></textarea>
+        </div>
+        <div class="form-row two-col">
+          <div>
+            <label>Price per second (USDC)</label>
+            <input type="number" name="pricePerSecUsd" value="0.0003" step="0.0001" min="0.000001" required>
+          </div>
+          <div>
+            <label>Duration (sec, 0 = unknown)</label>
+            <input type="number" name="durationSec" value="0" min="0">
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Audio file (mp3, m4a, wav)</label>
+          <input type="file" name="audio" accept="audio/*" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Upload track</button>
+      </form>
+    </section>
+
+    <!-- Tracks list -->
+    <section class="tracks-section" id="tracks-section" style="display:none;">
+      <h2>Your tracks</h2>
+      <div id="tracks-list" class="tracks-list">
+        <div class="loading">Loading…</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/app.js"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => PerStream.initCreatorPage());
+  </script>
+</body>
+</html>
