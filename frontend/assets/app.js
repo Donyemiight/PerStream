@@ -131,31 +131,21 @@ const PerStream = (() => {
       headers: { 'X-User-Id': currentUser.id },
     });
 
+    let streamData = null;
     if (stream.status === 402) {
       const info = await stream.json();
       showX402Info(info);
       document.getElementById('stat-status').textContent = '402 — deposit to listen';
-      return;
-    }
-
-    if (!stream.ok) {
+    } else if (!stream.ok) {
       showError('Failed to load stream');
       return;
+    } else {
+      streamData = await stream.json();
+      hideX402Info();
     }
 
-    const streamData = await stream.json();
-    hideX402Info();
-
-    // Set audio source
-    const audio = document.getElementById('audio');
-    audio.src = streamData.audioUrl;
-    document.getElementById('stat-status').textContent = 'Ready — press play';
-
-    // Update balance display
-    const balance = streamData.balanceMicroUsdc ?? 0;
-    document.getElementById('stat-balance').textContent = formatUsdc(balance);
-
-    // Listen handlers
+    // Wire up player handlers — always, including when 402 was returned,
+    // so the deposit buttons work even before the user has paid.
     setupPlayerHandlers(track, streamData);
   }
 
@@ -164,6 +154,14 @@ const PerStream = (() => {
 
   function setupPlayerHandlers(track, streamData) {
     const audio = document.getElementById('audio');
+
+    // If we have streamData, set up audio + balance display
+    if (streamData) {
+      audio.src = streamData.audioUrl;
+      const balance = streamData.balanceMicroUsdc ?? 0;
+      document.getElementById('stat-balance').textContent = formatUsdc(balance);
+      document.getElementById('stat-status').textContent = 'Ready — press play';
+    }
 
     const startSession = async () => {
       if (activeSession) return;
@@ -205,7 +203,7 @@ const PerStream = (() => {
     audio.addEventListener('pause', stopSession);
     audio.addEventListener('ended', stopSession);
 
-    // Deposit buttons
+    // Deposit buttons — always wired, even when 402 returned
     document.getElementById('btn-deposit').onclick = () => deposit(1);
     document.getElementById('btn-deposit-big').onclick = () => deposit(5);
   }
