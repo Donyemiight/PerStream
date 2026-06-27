@@ -164,7 +164,7 @@ const PerStream = (() => {
       document.getElementById('stat-balance').textContent = formatUsdc(balance);
       document.getElementById('stat-status').textContent = 'Ready — press play';
     } else {
-      audio.src = track.audioUrl || 'assets/demo-loop-15s.wav';
+      audio.src = track.audioUrl || 'assets/loop.mp3';
     }
 
     // === SIMPLIFIED METER (demo) ===

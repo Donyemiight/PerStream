@@ -21,9 +21,9 @@
   ];
 
   const DEMO_TRACKS = [
-    { id: 'trk-welcome', creator_id: 'demo-creator', title: 'PerStream Theme — Welcome to paid seconds', description: 'A 30-second welcome message. Use this to feel the per-second tick.', audioUrl: 'assets/demo-30s.wav', duration_sec: 30, price_per_sec: 300, plays: 142, earnings_total: 4260000 },
-    { id: 'trk-pitch', creator_id: 'demo-creator', title: 'The Cold-Start Cliff — PerStream pitch audio', description: '60-second pitch explaining why per-second beats subscriptions.', audioUrl: 'assets/demo-1min.wav', duration_sec: 60, price_per_sec: 500, plays: 89, earnings_total: 8910000 },
-    { id: 'trk-loop', creator_id: 'demo-creator', title: 'Demo Loop — looping tone for testing', description: 'A short test track. Loop it to see continuous per-second tick.', audioUrl: 'assets/demo-loop-15s.wav', duration_sec: 15, price_per_sec: 100, plays: 256, earnings_total: 1280000 },
+    { id: 'trk-welcome', creator_id: 'demo-creator', title: 'PerStream Theme — Welcome to paid seconds', description: 'Hear why per-second payments change everything for creators and listeners. 26 seconds.', audioUrl: 'assets/welcome.mp3', duration_sec: 26, price_per_sec: 300, plays: 142, earnings_total: 4260000 },
+    { id: 'trk-pitch', creator_id: 'demo-creator', title: 'The Cold-Start Cliff — why per-second beats subscriptions', description: 'A 25-second pitch explaining why your balance should only tick while audio plays.', audioUrl: 'assets/pitch.mp3', duration_sec: 25, price_per_sec: 500, plays: 89, earnings_total: 8910000 },
+    { id: 'trk-loop', creator_id: 'demo-creator', title: 'Demo Loop — short spoken test track', description: 'Press play, watch the meter tick, pause to stop. The whole point of PerStream in 17 seconds.', audioUrl: 'assets/loop.mp3', duration_sec: 17, price_per_sec: 100, plays: 256, earnings_total: 1280000 },
   ];
 
   const state = {
@@ -104,7 +104,7 @@
       return json({
         ok: true,
         trackId: track.id,
-        audioUrl: track.audioUrl || 'assets/demo-loop-15s.wav',  // silent WAV in demo
+        audioUrl: track.audioUrl || 'assets/loop.mp3',  // real demo audio
         pricePerSec: track.price_per_sec,
         durationSec: track.duration_sec,
         balanceMicroUsdc: state.balance,
