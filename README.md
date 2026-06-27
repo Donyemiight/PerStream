@@ -20,11 +20,15 @@ It uses **Circle Nanopayments** (gasless USDC as small as $0.000001) + **x402** 
 
 ## Try the demo
 
+The hosted live preview (simulated backend) is at:
+
 ```
-https://perstream-demo.live
+https://xyxf9ae7thau.space.minimax.io
 ```
 
-(or the latest deployed URL — see [Releases](https://github.com/Donyemiight/PerStream/releases))
+Click **"Try the demo"** → sign in with any email (e.g. `demo-listener@perstream.fm`) → press play on any track → watch the USDC counter tick every second. It's interactive and shows the full flow.
+
+The **real backend** (with actual Circle Nanopayments on Arc) is in the repo — clone and run `node scripts/seed.js && cd backend && node src/server.js` to boot it locally.
 
 1. Open the URL → sign in with email (one click, no MetaMask)
 2. Press play on any track
