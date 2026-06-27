@@ -173,7 +173,8 @@
     });
 
     // Submit feedback
-    document.getElementById('fw-submit').addEventListener('click', async () => {
+    const fwSubmit = document.getElementById('fw-submit');
+    if (fwSubmit) fwSubmit.addEventListener('click', async () => {
       if (!selectedRating) {
         setStatus('fw-status', 'Please pick a rating first.', 'error');
         return;
@@ -209,7 +210,8 @@
     });
 
     // Submit early-access lead
-    document.getElementById('fw-lead-submit').addEventListener('click', async () => {
+    const fwLeadSubmit = document.getElementById('fw-lead-submit');
+    if (fwLeadSubmit) fwLeadSubmit.addEventListener('click', async () => {
       const email = document.getElementById('fw-lead-email').value.trim();
       const role = document.getElementById('fw-lead-role').value;
       if (!email || !email.includes('@')) {
@@ -246,11 +248,19 @@
 
   // ── Boot ──
   function boot() {
-    injectStyles();
-    const container = document.getElementById('feedback-widget-container');
-    if (container) container.innerHTML = buildWidgetHTML();
-    setupInteractions();
-    console.log('[feedback-widget] ready');
+    try {
+      injectStyles();
+      const container = document.getElementById('feedback-widget-container');
+      if (!container) {
+        // Page has no widget container — nothing to wire up.
+        return;
+      }
+      container.innerHTML = buildWidgetHTML();
+      setupInteractions();
+      console.log('[feedback-widget] ready');
+    } catch (err) {
+      console.error('[feedback-widget] boot failed:', err);
+    }
   }
 
   if (document.readyState === 'loading') {

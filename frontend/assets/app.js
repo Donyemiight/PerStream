@@ -256,8 +256,10 @@ const PerStream = (() => {
     };
 
     // Deposit buttons — always wired
-    document.getElementById('btn-deposit').onclick = () => deposit(1);
-    document.getElementById('btn-deposit-big').onclick = () => deposit(5);
+    const btnDep = document.getElementById('btn-deposit');
+    const btnDepBig = document.getElementById('btn-deposit-big');
+    if (btnDep) btnDep.onclick = () => deposit(1);
+    if (btnDepBig) btnDepBig.onclick = () => deposit(5);
 
     // Single, reliable Start/Stop button
     const btnStart = document.getElementById('btn-start-stream');
@@ -427,7 +429,8 @@ const PerStream = (() => {
     };
 
     // Withdraw
-    document.getElementById('btn-withdraw-all').onclick = async () => {
+    const btnWithdrawAll = document.getElementById('btn-withdraw-all');
+    if (btnWithdrawAll) btnWithdrawAll.onclick = async () => {
       try {
         const r = await authedFetch('/api/creator/withdraw', {
           method: 'POST',
