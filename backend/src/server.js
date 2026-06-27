@@ -194,18 +194,24 @@ app.post('/api/auth/login', async (req, res) => {
       // Pre-fund every new user with $5 USDC so the demo is frictionless.
       // The whole 'deposit to listen' dance is friction that distracts from
       // the actual per-second mechanic the brief is about.
-      // In live mode, we still pre-fund the user's in-memory ledger to 0
-      // (real on-chain funding requires the user to have USDC on Arc first,
-      // which is out of scope for instant demo).
       if (arc.MODE === 'mock') {
         await arc.deposit({ listener: user.wallet, amountMicroUsdc: 5_000_000 });
         console.log('[auth] pre-funded new user ' + user.handle + ' with $5 USDC');
       } else if (arc.MODE === 'live') {
-        // In live mode, the user's in-memory balance is 0 until they deposit.
-        // They'll see 402 when they try to stream. They can use the
-        // + Add 1/5 USDC button which calls /api/listen/deposit which
-        // calls the real Circle Gateway deposit flow.
-        console.log('[auth] new user ' + user.handle + ' in LIVE mode, balance=0 until deposit');
+        // LIVE mode: the seller wallet (the demo's "faucet") transfers
+        // 5 USDC to the new user. This is a REAL on-chain transaction
+        // on Arc testnet that judges can verify. The user gets real USDC
+        // they can immediately use to stream.
+        try {
+          const result = await arc.sellerFundUser({
+            recipient: user.wallet,
+            amountMicroUsdc: 5_000_000,  // $5
+          });
+          console.log('[auth] live mode: funded new user ' + user.handle + ' with $5 USDC, tx=' + result.fundTxHash);
+        } catch (e) {
+          console.warn('[auth] live mode funding failed for ' + user.handle + ':', e.message);
+          // Continue anyway — user can still try to deposit themselves
+        }
       }
     }
 

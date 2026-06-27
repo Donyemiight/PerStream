@@ -138,6 +138,33 @@ async function liveDeposit({ listener, amountMicroUsdc }) {
   };
 }
 
+// Live mode "demo faucet": withdraws USDC from the seller's Gateway balance
+// to a new user's wallet. This is a real on-chain transaction on Arc testnet
+// that anyone can verify on Arcscan. Used so demo users don't need to visit
+// the Circle faucet themselves — the seller wallet acts as a testnet faucet.
+async function sellerFundUser({ recipient, amountMicroUsdc }) {
+  const client = await getLiveClient();
+  const amountUsd = fromMicroUsdc(amountMicroUsdc);
+  // First ensure the seller has USDC in their Gateway balance
+  // (deposits wallet → Gateway if needed)
+  const balances = await client.getBalances();
+  // BigInt comparison (viem uses .lt() but we use plain > to be safe)
+  if (BigInt(balances.gateway.available) < BigInt(amountMicroUsdc)) {
+    console.log('[sellerFundUser] seller Gateway balance low, depositing from wallet');
+    await client.deposit(amountUsd.toFixed(6));
+  }
+  // Now withdraw from Gateway to the recipient's wallet
+  const result = await client.withdraw(amountUsd.toFixed(6), {
+    recipient,
+  });
+  return {
+    ok: true,
+    fundTxHash: result.mintTxHash,
+    amountMicro: amountMicroUsdc,
+    recipient,
+  };
+}
+
 async function liveTick({ sessionId, listener, creator, pricePerSec, seconds }) {
   // Per-second tick — for high-frequency micropayments, we batch.
   // In production this would call a custom contract that streams from
@@ -250,6 +277,7 @@ module.exports = {
   withdraw,
   getListenerBalance,
   getCreatorEarnings,
+  sellerFundUser,
   usdToMicro,
   microToUsd,
 };
