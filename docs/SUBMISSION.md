@@ -59,7 +59,7 @@ Creator economy + AI agents (primary)
 Nanomoney / micropayments (secondary)
 
 ## Team
-Solo — Ademidun (donYemiight on X, yemiiight on Discord). Returning Lepton builder; previously shipped TradeMouth on Canteen.
+Solo — Oluyemi (donyemiight) (donYemiight on X, yemiiight on Discord). Returning Lepton builder; previously shipped TradeMouth on Canteen.
 
 ## Anything else judges should know
 - Built entirely on Termux (Android) — proof of zero-infra shipping

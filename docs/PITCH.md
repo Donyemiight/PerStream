@@ -8,7 +8,7 @@
 
 ## The 30-second version
 
-> Hi, I'm Ademidun — I shipped TradeMouth solo, came back to Canteen for Lepton, and I built **PerStream**: a per-second USDC streaming paywall for podcasts, built on **Circle Nanopayments + Arc**.
+> Hi, I'm Oluyemi (donyemiight) — I shipped TradeMouth solo, came back to Canteen for Lepton, and I built **PerStream**: a per-second USDC streaming paywall for podcasts, built on **Circle Nanopayments + Arc**.
 >
 > Subscriptions and ad breaks don't fit cold-start creators. Per-second pricing does. Listener presses play, wallet ticks USDC every second, creator earns from listener #1 — no ads, no subs, no audience minimum.
 >
@@ -32,7 +32,7 @@
 >
 > Adoption path: white-label the listen page, embed in canteen.fm, open API for any host. PerStream is also a vehicle for **AI-agent listeners** — fans' agents pre-authorize a daily listening budget and stream autonomously, settling on the same Nanopayments rail.
 >
-> Demo: [link]. Code: github.com/Donyemiight/PerStream. Creator: Ademidun (donYemiight on X), returning Lepton builder, shipped TradeMouth on the prior Canteen event.
+> Demo: [link]. Code: github.com/Donyemiight/PerStream. Creator: Oluyemi (donyemiight) (donYemiight on X), returning Lepton builder, shipped TradeMouth on the prior Canteen event.
 
 ---
 

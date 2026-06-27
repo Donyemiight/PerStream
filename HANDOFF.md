@@ -209,4 +209,4 @@ Hit all 5 → you win this thing.
 
 ---
 
-_Built for the Lepton Agents Hackathon by Mavis + Ademidun, June 26, 2026._
+_Built for the Lepton Agents Hackathon by Oluyemi (donyemiight), June 26, 2026._

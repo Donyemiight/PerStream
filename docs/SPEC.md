@@ -151,4 +151,4 @@ If Canteen/Circle picks PerStream up:
 
 ---
 
-_Built solo by Ademidun (@donYemiight) for Lepton Agents Hackathon 2026._
+_Built solo by Oluyemi (donyemiight) (@donYemiight) for Lepton Agents Hackathon 2026._

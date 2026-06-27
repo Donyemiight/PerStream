@@ -115,7 +115,7 @@ See [`docs/SPEC.md`](docs/SPEC.md) for the full specification.
 
 ## About
 
-Built by **Ademidun** ([@donYemiight](https://x.com/donYemiight)) for the Lepton Agents Hackathon 2026.
+Built by **Oluyemi (donyemiight)** ([@donYemiight](https://x.com/donYemiight)) for the Lepton Agents Hackathon 2026.
 
 Solo build, Termux (Android), 14 days. Returning Canteen builder (previously shipped TradeMouth on the prior event).
 
