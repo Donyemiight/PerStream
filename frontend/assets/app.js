@@ -450,6 +450,41 @@ const PerStream = (() => {
     } else {
       reviewsList.innerHTML = '<p class="muted" style="color: var(--text-dim); font-size: 0.9rem;">No ratings yet. Share the demo URL to get them.</p>';
     }
+
+    // Audit trail (on-chain verification)
+    const auditSection = document.getElementById('audit-section');
+    if (auditSection) {
+      auditSection.style.display = 'block';
+      try {
+        const ar = await fetch('demo/api/audit/ticks?limit=20');
+        if (ar.ok) {
+          const audit = await ar.json();
+          document.getElementById('audit-tick-count').textContent = audit.stats.totalTicks;
+          document.getElementById('audit-total').textContent = audit.stats.totalAmountUsd.toFixed(6);
+          document.getElementById('audit-mode').textContent = audit.mode;
+          const list = document.getElementById('audit-ticks-list');
+          list.innerHTML = '';
+          if (audit.ticks.length === 0) {
+            list.innerHTML = '<p class="muted">No ticks yet. Play a track to start the audit trail.</p>';
+          } else {
+            audit.ticks.forEach(t => {
+              const row = document.createElement('div');
+              row.className = 'audit-row';
+              const time = new Date(t.ts).toLocaleTimeString();
+              const arcscanLink = t.arcscanUrl
+                ? `<a href="${t.arcscanUrl}" target="_blank" rel="noopener" class="arcscan-link">${t.txHash.slice(0, 10)}…${t.txHash.slice(-6)} ↗</a>`
+                : `<code>${t.txHash.slice(0, 10)}…</code>`;
+              row.innerHTML = `
+                <span class="audit-time">${time}</span>
+                <span class="audit-amount">$${t.amountUsd.toFixed(6)}</span>
+                <span class="audit-tx">${arcscanLink}</span>
+              `;
+              list.appendChild(row);
+            });
+          }
+        }
+      } catch {}
+    }
   }
 
   // ─── Auth bar (shared) ───

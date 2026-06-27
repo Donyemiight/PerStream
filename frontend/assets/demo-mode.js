@@ -36,6 +36,8 @@
     listenerInterval: null,
     feedback: [],                   // user ratings + comments (in-memory only)
     leads: [],                     // early-access signups
+    tickLedger: [],                // per-second payment audit trail (in-memory)
+    txCounter: 0,                  // for mock tx hash generation
   };
 
   function usd(amount) { return (amount || 0) / 1_000_000; }
@@ -236,6 +238,40 @@
       return json({ count: state.leads.length });
     }
 
+    // GET /api/audit/ticks
+    if (method === 'GET' && path.startsWith('/api/audit/ticks')) {
+      const limit = Math.min(parseInt((path.split('?')[1] || '').match(/limit=(\d+)/)?.[1] || '50', 10), 500);
+      const ticks = state.tickLedger.slice(-limit).reverse();
+      const totalMicro = state.tickLedger.reduce((sum, e) => sum + (e.amountMicro || 0), 0);
+      const stats = {
+        totalTicks: state.tickLedger.length,
+        totalAmountMicro: totalMicro,
+        totalAmountUsd: totalMicro / 1_000_000,
+        uniqueListeners: new Set(state.tickLedger.map(e => e.listener)).size,
+        uniqueCreators: new Set(state.tickLedger.map(e => e.creator)).size,
+        oldestTick: state.tickLedger.length > 0 ? state.tickLedger[0].ts : null,
+        newestTick: state.tickLedger.length > 0 ? state.tickLedger[state.tickLedger.length - 1].ts : null,
+      };
+      return json({ mode: 'mock', stats, ticks });
+    }
+
+    // GET /api/audit/stats
+    if (method === 'GET' && path === '/api/audit/stats') {
+      const totalMicro = state.tickLedger.reduce((sum, e) => sum + (e.amountMicro || 0), 0);
+      return json({
+        mode: 'mock',
+        sellerAddress: '0xe6737b1cb6cdbc484fd11d658e664835a7673e46',
+        arcscanBaseUrl: 'https://testnet.arcscan.app',
+        totalTicks: state.tickLedger.length,
+        totalAmountMicro: totalMicro,
+        totalAmountUsd: totalMicro / 1_000_000,
+        uniqueListeners: new Set(state.tickLedger.map(e => e.listener)).size,
+        uniqueCreators: new Set(state.tickLedger.map(e => e.creator)).size,
+        oldestTick: state.tickLedger.length > 0 ? state.tickLedger[0].ts : null,
+        newestTick: state.tickLedger.length > 0 ? state.tickLedger[state.tickLedger.length - 1].ts : null,
+      });
+    }
+
     // Fallback: real fetch
     return realFetch(url, opts);
   };
@@ -260,6 +296,26 @@
       s.secondsPlayed += 1;
       s.amountPaid += s.pricePerSec;
       state.creatorEarnings += s.pricePerSec;
+
+      // Record in audit ledger
+      state.txCounter += 1;
+      const sid = s.sessionId.slice(0, 8);
+      const stamp = Date.now().toString(16);
+      const txHash = `0x${sid}${stamp}${state.txCounter.toString(16).padStart(4, '0')}`.padEnd(66, '0');
+      state.tickLedger.push({
+        ts: new Date().toISOString(),
+        sessionId: s.sessionId,
+        trackId: s.trackId,
+        listener: state.currentUser ? state.currentUser.wallet : 'demo-listener-wallet',
+        creator: track.creator_id || 'demo-creator',
+        amountMicro: s.pricePerSec,
+        amountUsd: s.pricePerSec / 1_000_000,
+        txHash,
+        arcscanUrl: `https://testnet.arcscan.app/tx/${txHash}`,
+        mode: 'mock',
+      });
+      // Cap memory
+      if (state.tickLedger.length > 1000) state.tickLedger.shift();
     }, 1000);
   }
 

@@ -11,6 +11,7 @@
 
 const db = require('./db');
 const arc = require('./arc');
+const tickLedger = require('./tick-ledger');
 
 // Tick interval — 1 second is the canonical unit
 const TICK_INTERVAL_MS = 1000;
@@ -105,6 +106,18 @@ class Meter {
     if (result.ok) {
       db.tickSession(fresh.id, pricePerSec);
       db.incrementTrackStats(fresh.track_id, pricePerSec);
+      // Record in audit ledger
+      tickLedger.append({
+        sessionId: fresh.id,
+        trackId: fresh.track_id,
+        listener: listenerUser ? listenerUser.wallet : fresh.listener_id,
+        creator: creatorUser ? creatorUser.wallet : fresh.creator_id,
+        amountMicro: pricePerSec,
+        amountUsd: pricePerSec / 1_000_000,
+        txHash: result.txHash,
+        arcscanUrl: result.arcscanUrl || null,
+        mode: arc.MODE,
+      });
     } else {
       // Listener ran out of deposit — stop the meter gracefully
       console.log(`[meter] session ${fresh.id}: ${result.reason}, stopping`);

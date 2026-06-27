@@ -571,3 +571,44 @@ button { font: inherit; cursor: pointer; }
 .review-stars { color: var(--accent-3); font-size: 0.95rem; margin-bottom: 0.25rem; }
 .review-comment { color: var(--text); font-size: 0.9rem; }
 .review-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+/* ─── Audit trail (on-chain verification) ─── */
+.audit-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+}
+.audit-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+.audit-card p.muted { margin-bottom: 1rem; }
+.audit-stats-row { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.audit-ticks-list { max-height: 300px; overflow-y: auto; }
+.audit-ticks-list h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--text-dim); }
+.audit-row {
+  display: grid;
+  grid-template-columns: 80px 110px 1fr;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.8rem;
+  font-family: ui-monospace, monospace;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+.audit-row:last-child { border-bottom: none; }
+.audit-time { color: var(--text-dim); }
+.audit-amount { color: var(--accent-3); font-weight: 600; }
+.audit-tx { overflow: hidden; text-overflow: ellipsis; }
+.arcscan-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-family: ui-monospace, monospace;
+}
+.arcscan-link:hover { text-decoration: underline; }
+.audit-card code {
+  background: var(--bg-card-2);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+.audit-card .small { font-size: 0.8rem; margin-top: 0.5rem; }

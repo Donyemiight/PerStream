@@ -513,6 +513,36 @@ app.get('/api/lead/count', (req, res) => {
   res.json({ count: db.getLeadCount() });
 });
 
+// ─────────────────────────────────────────────
+// Audit trail — for verifying payments on Arc testnet explorer
+// ─────────────────────────────────────────────
+const tickLedger = require('./tick-ledger');
+
+app.get('/api/audit/ticks', (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit || '50', 10), 500);
+  const ticks = tickLedger.recent(limit);
+  res.json({
+    mode: arc.MODE,
+    stats: tickLedger.stats(),
+    ticks,
+  });
+});
+
+app.get('/api/audit/stats', (req, res) => {
+  res.json({
+    mode: arc.MODE,
+    sellerAddress: arc.getSellerAddress ? arc.getSellerAddress() : null,
+    arcscanBaseUrl: 'https://testnet.arcscan.app',
+    ...tickLedger.stats(),
+  });
+});
+
+app.get('/api/audit/export', (req, res) => {
+  res.setHeader('Content-Type', 'application/x-ndjson');
+  res.setHeader('Content-Disposition', 'attachment; filename="tick-ledger.jsonl"');
+  res.send(tickLedger.streamAll());
+});
+
 // ───────────────────────────────────────────────
 // Helpers
 // ───────────────────────────────────────────────

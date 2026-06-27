@@ -44,6 +44,37 @@
       </div>
     </section>
 
+    <!-- On-chain audit trail -->
+    <section class="audit-card" id="audit-section" style="display:none;">
+      <h3>🔍 On-chain audit trail <span class="muted">· every second, paid</span></h3>
+      <p class="muted">
+        Every per-second tick is recorded. In live mode, the transaction hash links directly to
+        the Arc testnet explorer. Click any row to verify the on-chain settlement.
+      </p>
+      <div class="audit-stats-row" id="audit-stats-row">
+        <div class="fs-card">
+          <div class="fs-value" id="audit-tick-count">0</div>
+          <div class="fs-label">ticks recorded</div>
+        </div>
+        <div class="fs-card">
+          <div class="fs-value" id="audit-total">0.000000</div>
+          <div class="fs-label">total USDC streamed</div>
+        </div>
+        <div class="fs-card">
+          <div class="fs-value" id="audit-mode">mock</div>
+          <div class="fs-label">mode</div>
+        </div>
+      </div>
+      <div class="audit-ticks-list">
+        <h4>Recent ticks <span class="muted">(newest first)</span></h4>
+        <div id="audit-ticks-list"></div>
+        <p class="muted small">
+          Need the full log? <a href="/api/audit/export" target="_blank">Download JSONL</a>
+          · Or query <code>/api/audit/ticks?limit=100</code>
+        </p>
+      </div>
+    </section>
+
     <!-- Feedback + leads summary -->
     <section class="feedback-summary" id="feedback-summary" style="display:none;">
       <h3>User feedback &amp; signups</h3>

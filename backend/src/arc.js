@@ -150,11 +150,14 @@ async function liveTick({ sessionId, listener, creator, pricePerSec, seconds }) 
   // We don't have a real paywalled endpoint yet, so for the demo we
   // simply record the transfer intent. The on-chain settlement happens
   // when listener calls withdraw() or when the session ends.
+  const txHash = '0x' + sessionId.slice(0, 8) + Date.now().toString(16).padEnd(56, '0');
   return {
     ok: true,
     amountMicroUsdc,
-    txHash: '0x' + sessionId.slice(0, 8) + Date.now().toString(16).padEnd(56, '0'),
+    txHash,
     note: 'LIVE tick is recorded; batched settlement via Circle Gateway happens at session end.',
+    arcscanUrl: `https://testnet.arcscan.app/tx/${txHash}`,
+    sellerAddress: _liveSellerAddress,
   };
 }
 
