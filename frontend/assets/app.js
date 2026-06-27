@@ -258,12 +258,14 @@ const PerStream = (() => {
         promptLogin();
         return;
       }
+      showToast(`Depositing $${amountUsd} USDC…`, 'info');
       const r = await authedFetch('/api/listen/deposit', {
         method: 'POST',
         body: JSON.stringify({ amountUsd }),
       });
       const data = await r.json();
       if (!data.ok) {
+        showToast(`Deposit failed: ${data.reason || 'unknown error'}`, 'error');
         showError(data.reason || 'deposit_failed');
         return;
       }
