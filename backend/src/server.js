@@ -178,8 +178,15 @@ app.post('/api/auth/login', async (req, res) => {
         handle: handle || (email ? email.split('@')[0] : null),
         userId: null,
       });
+      // Generate a unique handle — if the email prefix is taken, append a random suffix
+      let desiredHandle = handle || (email ? email.split('@')[0] : null) || `user_${Date.now()}`;
+      let existing = db.getUserByHandle(desiredHandle);
+      while (existing) {
+        desiredHandle = desiredHandle + '_' + Math.random().toString(36).slice(2, 6);
+        existing = db.getUserByHandle(desiredHandle);
+      }
       user = db.createUser({
-        handle: handle || (email ? email.split('@')[0] : `user_${Date.now()}`),
+        handle: desiredHandle,
         email,
         wallet: prov.wallet,
         role: 'listener',
