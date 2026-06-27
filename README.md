@@ -21,8 +21,10 @@ It uses **Circle Nanopayments** (gasless USDC as small as $0.000001) + **x402** 
 ## Try the demo
 
 ```
-https://perstream-demo.fm
+https://perstream-demo.live
 ```
+
+(or the latest deployed URL — see [Releases](https://github.com/Donyemiight/PerStream/releases))
 
 1. Open the URL → sign in with email (one click, no MetaMask)
 2. Press play on any track

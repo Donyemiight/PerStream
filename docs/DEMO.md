@@ -8,7 +8,7 @@
 
 ## Setup (1 min before you hit record)
 
-- [ ] Open `https://perstream-demo.fm` (your cloudflared URL)
+- [ ] Open `https://perstream-demo.live` (or your latest deployed URL — the cloudflared URL printed by `scripts/demo.sh`)
 - [ ] Have one tab on `creator.html` (your dashboard, logged in)
 - [ ] Have one tab on `listen.html` (the public URL you're demoing)
 - [ ] Have Arc testnet explorer open in a third tab

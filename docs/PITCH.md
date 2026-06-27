@@ -14,7 +14,7 @@
 >
 > It uses every Circle primitive: Nanopayments for the per-second settlement, Agent Stack for the embedded listener wallet, x402 for the HTTP paywall, Arc for the chain.
 >
-> [demo](https://perstream-demo.fm): press play, watch the USDC counter tick in real time. Cold-start creators can monetize from day one.
+> [demo](https://perstream-demo.live): press play, watch the USDC counter tick in real time. Cold-start creators can monetize from day one.
 
 ---
 

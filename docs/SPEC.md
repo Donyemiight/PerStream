@@ -137,7 +137,7 @@ Pure vanilla JS, no React/Vue/Svelte — runs anywhere, deploys anywhere, loads 
 
 - ✅ Demo video < 2 minutes, shows live per-second USDC tick
 - ✅ GitHub repo: clean README, deployable in 5 commands, MIT licensed
-- ✅ Live demo URL: `https://perstream-demo.fm`
+- ✅ Live demo URL: `https://perstream-demo.live` (or current deployed URL)
 - ✅ At least 3 real users (3 podcasters with 1 track each) before judging
 - ✅ Public Twitter thread showing the build in progress
 - ✅ Submission form filled + Discord intro posted
