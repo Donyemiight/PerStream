@@ -54,6 +54,7 @@ const db = require('./db');
 const wallet = require('./wallet');
 const meter = require('./meter');
 const arc = require('./arc');
+const ListenerAgent = require('./agent-listener');
 
 // Initialise DB before defining routes (async, but only blocks boot once)
 db.ready().catch(err => {
@@ -396,6 +397,70 @@ app.post('/api/creator/withdraw', authMiddleware, async (req, res) => {
   });
 
   res.json(result);
+});
+
+// ─────────────────────────────────────────────────
+// AI Listener Agent endpoints (the agentic-commerce angle)
+// ─────────────────────────────────────────────────
+
+app.post('/api/agent/listen', async (req, res) => {
+  // Agent listens to one track with a budget, paying per-second
+  const { trackId, budgetUsd = 1, maxSeconds = 30, email } = req.body || {};
+  if (!trackId) return res.status(400).json({ error: 'track_id_required' });
+
+  try {
+    const agent = new ListenerAgent({
+      email: email || `agent-${Date.now()}@perstream.fm`,
+      handle: `agent-${Math.random().toString(36).slice(2, 8)}`,
+      budgetUsd,
+      goal: 'Listen to one track autonomously',
+    });
+    await agent.init();
+    const result = await agent.listenToTrack(trackId, { maxSeconds });
+    res.json({ ok: true, agent: agent.user, ...result, log: agent.log });
+  } catch (err) {
+    console.error('[agent] listen failed:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/agent/auto', async (req, res) => {
+  // Agent runs autonomously: discovers tracks, listens, repeats
+  const { budgetUsd = 5, maxTracks = 3, email } = req.body || {};
+
+  try {
+    const agent = new ListenerAgent({
+      email: email || `autonomous-agent-${Date.now()}@perstream.fm`,
+      handle: `auto-agent-${Math.random().toString(36).slice(2, 8)}`,
+      budgetUsd,
+      goal: 'Discover and consume paid audio autonomously',
+    });
+    await agent.init();
+    const result = await agent.runAutonomous({ maxTracks });
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('[agent] auto failed:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/agent/info', async (req, res) => {
+  res.json({
+    name: 'PerStream AI Listener Agent',
+    description: 'An autonomous agent that pays per-second for audio on Arc',
+    capabilities: [
+      'Provisions its own USDC wallet (Circle Agent Stack)',
+      'Sets a daily listening budget',
+      'Discovers tracks on PerStream',
+      'Pays per-second via x402 + Circle Nanopayments',
+      'Stops when budget exhausted',
+      'Logs every transaction for transparency',
+    ],
+    endpoints: {
+      'POST /api/agent/listen': 'Listen to one track with budget',
+      'POST /api/agent/auto': 'Run autonomous multi-track discovery',
+    },
+  });
 });
 
 // ───────────────────────────────────────────────

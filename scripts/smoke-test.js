@@ -161,6 +161,27 @@ async function main() {
     } else fail('dashboard', JSON.stringify(r));
   } catch (e) { fail('dashboard', e.message); }
 
+  // 11. AI Listener Agent endpoint
+  try {
+    const r = await req('GET', '/api/agent/info');
+    if (r.status === 200 && r.body.capabilities) {
+      pass(`GET /api/agent/info → ${r.body.capabilities.length} agent capabilities`);
+    } else fail('agent info', JSON.stringify(r));
+  } catch (e) { fail('agent info', e.message); }
+
+  // 12. Agent auto run (with small budget to keep test fast)
+  try {
+    const track = db.listTracks({ creatorId })[0];
+    const r = await req('POST', '/api/agent/listen', {
+      trackId: track.id,
+      budgetUsd: 0.005,
+      maxSeconds: 3,
+    });
+    if (r.status === 200 && r.body.ok && r.body.secondsPlayed >= 2) {
+      pass(`POST /api/agent/listen → agent ran ${r.body.secondsPlayed}s, paid $${r.body.totalPaidUsd}`);
+    } else fail('agent listen', JSON.stringify(r));
+  } catch (e) { fail('agent listen', e.message); }
+
   console.log(`\n[test] ${passed} passed, ${failures} failed\n`);
   db.flushSync();
   server.close();
