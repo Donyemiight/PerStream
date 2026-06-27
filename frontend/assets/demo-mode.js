@@ -29,6 +29,15 @@
   if (wantsDemo || isStaticPreview) {
     window.PERSTREAM_API = 'demo';
     console.log('[demo-mode] enabled (simulated backend)');
+    // Add a small visible indicator so user knows they're in demo mode
+    window.addEventListener('DOMContentLoaded', () => {
+      const badge = document.createElement('div');
+      badge.textContent = '⚡ DEMO MODE (no live backend)';
+      badge.style.cssText = 'position:fixed; bottom:12px; left:12px; background:#fbbf24; color:#0a0a0f; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:700; z-index:9998; font-family:system-ui; box-shadow:0 2px 8px rgba(0,0,0,0.3); cursor:pointer;';
+      badge.title = 'Click to switch to LIVE mode';
+      badge.onclick = () => { window.location.href = 'https://providence-musician-civic-watt.trycloudflare.com' + window.location.pathname; };
+      document.body.appendChild(badge);
+    });
   } else {
     // Real backend detected — don't intercept fetch, just exit
     console.log('[demo-mode] disabled (real backend on ' + host + ')');
