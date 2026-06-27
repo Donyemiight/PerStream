@@ -378,11 +378,20 @@ app.get('/api/creator/dashboard', authMiddleware, (req, res) => {
     sessionsActive: db.getActiveSessionsForTrack(t.id).length,
   }));
 
+  const feedback = db.getFeedbackStats();
+  const leadCount = db.getLeadCount();
+
   res.json({
     creator: req.user,
     earningsLive: arc.microToUsd(earningsTotal),
     earningsRecorded: arc.microToUsd(dbEarningsTotal),
     tracks: trackStats,
+    feedback: {
+      total: feedback.total,
+      average: feedback.average,
+      recent: feedback.recent.slice(0, 5),
+    },
+    leads: { count: leadCount },
   });
 });
 
@@ -461,6 +470,47 @@ app.get('/api/agent/info', async (req, res) => {
       'POST /api/agent/auto': 'Run autonomous multi-track discovery',
     },
   });
+});
+
+// ─────────────────────────────────────────
+// Feedback & Leads (so users can rate, comment, and request early access)
+// ────────────────────────────────────────────────────────────────
+
+// Submit a rating + optional comment
+app.post('/api/feedback', async (req, res) => {
+  const { rating, comment, trackId, page, userEmail, userHandle } = req.body || {};
+  try {
+    const result = db.addFeedback({ userEmail, userHandle, trackId, rating, comment, page });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Get aggregated feedback stats (public — anyone can see what users think)
+app.get('/api/feedback/stats', (req, res) => {
+  res.json(db.getFeedbackStats());
+});
+
+// Get individual feedback entries (public — shows real comments)
+app.get('/api/feedback', (req, res) => {
+  res.json({ feedback: db.getAllFeedback(parseInt(req.query.limit || '50', 10)) });
+});
+
+// Capture an early-access lead
+app.post('/api/lead', async (req, res) => {
+  const { email, role, useCase, source } = req.body || {};
+  try {
+    const result = db.addLead({ email, role, useCase, source });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Get lead count (for the creator to see traction)
+app.get('/api/lead/count', (req, res) => {
+  res.json({ count: db.getLeadCount() });
 });
 
 // ───────────────────────────────────────────────

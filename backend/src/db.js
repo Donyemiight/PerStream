@@ -85,6 +85,29 @@ async function init() {
     CREATE INDEX IF NOT EXISTS idx_sessions_active ON sessions(active);
     CREATE INDEX IF NOT EXISTS idx_sessions_track ON sessions(track_id);
     CREATE INDEX IF NOT EXISTS idx_tracks_creator ON tracks(creator_id);
+
+    CREATE TABLE IF NOT EXISTS feedback (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_email    TEXT,
+      user_handle   TEXT,
+      track_id      TEXT,
+      rating        INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
+      comment       TEXT,
+      page          TEXT,
+      created_at    INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS leads (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      email         TEXT NOT NULL,
+      role          TEXT,
+      use_case      TEXT,
+      source        TEXT,
+      created_at    INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at);
+    CREATE INDEX IF NOT EXISTS idx_leads_email ON leads(email);
   `);
 
   persist();
@@ -299,6 +322,8 @@ function getTrackEarnings(trackId) {
   return row ? row.total : 0;
 }
 
+
+
 function getTopTracks(creatorId, limit = 10) {
   const stmt = db.prepare(`
     SELECT id, title, plays, earnings_total, duration_sec, price_per_sec
@@ -309,6 +334,84 @@ function getTopTracks(creatorId, limit = 10) {
   `);
   stmt.bind([creatorId, limit]);
   return rowsFromStmt(stmt);
+}
+
+// ───────────────────────────────────────────────
+// Feedback (user ratings + comments)
+// ───────────────────────────────────────────────
+
+function addFeedback({ userEmail = null, userHandle = null, trackId = null, rating, comment = '', page = '' }) {
+  const r = Number(rating);
+  if (!r || r < 1 || r > 5) {
+    throw new Error('rating must be 1-5');
+  }
+  db.run(
+    `INSERT INTO feedback (user_email, user_handle, track_id, rating, comment, page, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [userEmail, userHandle, trackId, r, String(comment || '').slice(0, 2000), String(page || '').slice(0, 100), Date.now()]
+  );
+  // Get the inserted rowid via a fresh query
+  const stmt = db.prepare('SELECT last_insert_rowid() AS id');
+  stmt.step();
+  const id = stmt.getAsObject().id;
+  stmt.free();
+  persist();
+  return { ok: true, id };
+}
+
+function getFeedbackStats() {
+  // sql.js needs step()/getAsObject() not .get() — fix here
+  const totalStmt = db.prepare(`SELECT COUNT(*) AS n FROM feedback`);
+  totalStmt.step();
+  const total = totalStmt.getAsObject().n || 0;
+  totalStmt.free();
+
+  const avgStmt = db.prepare(`SELECT AVG(rating) AS a FROM feedback`);
+  avgStmt.step();
+  const avg = avgStmt.getAsObject().a || 0;
+  avgStmt.free();
+
+  const distStmt = db.prepare(`SELECT rating, COUNT(*) AS n FROM feedback GROUP BY rating ORDER BY rating DESC`);
+  const distribution = rowsFromStmt(distStmt);
+
+  const recentStmt = db.prepare(`SELECT * FROM feedback ORDER BY created_at DESC LIMIT 20`);
+  const recent = rowsFromStmt(recentStmt);
+
+  return {
+    total,
+    average: Math.round((avg || 0) * 10) / 10,
+    distribution,
+    recent,
+  };
+}
+
+function getAllFeedback(limit = 200) {
+  return rowsFromStmt(db.prepare(`SELECT * FROM feedback ORDER BY created_at DESC LIMIT ?`).bind([limit]));
+}
+
+// ───────────────────────────────────────────────
+// Leads (early-access capture)
+// ───────────────────────────────────────────────
+
+function addLead({ email, role = null, useCase = null, source = null }) {
+  if (!email || !email.includes('@')) throw new Error('valid email required');
+  db.run(
+    `INSERT INTO leads (email, role, use_case, source, created_at) VALUES (?, ?, ?, ?, ?)`,
+    [String(email).toLowerCase().trim(), role ? String(role).slice(0, 50) : null, useCase ? String(useCase).slice(0, 500) : null, source ? String(source).slice(0, 100) : null, Date.now()]
+  );
+  persist();
+  return { ok: true };
+}
+
+function getAllLeads(limit = 200) {
+  return rowsFromStmt(db.prepare(`SELECT * FROM leads ORDER BY created_at DESC LIMIT ?`).bind([limit]));
+}
+
+function getLeadCount() {
+  const stmt = db.prepare(`SELECT COUNT(*) AS n FROM leads`);
+  stmt.step();
+  const n = stmt.getAsObject().n || 0;
+  stmt.free();
+  return n;
 }
 
 // ───────────────────────────────────────────────
@@ -341,6 +444,14 @@ module.exports = {
   getCreatorEarnings,
   getTrackEarnings,
   getTopTracks,
+  // feedback
+  addFeedback,
+  getFeedbackStats,
+  getAllFeedback,
+  // leads
+  addLead,
+  getAllLeads,
+  getLeadCount,
   // raw db handle (for advanced use)
   get db() { return db; },
 };

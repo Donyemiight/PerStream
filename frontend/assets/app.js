@@ -360,6 +360,37 @@ const PerStream = (() => {
         alert('Withdraw error: ' + err.message);
       }
     };
+
+    // Feedback + leads stats
+    document.getElementById('feedback-summary').style.display = 'block';
+    const avgEl = document.getElementById('fs-avg-rating');
+    const countEl = document.getElementById('fs-rating-count');
+    const leadsEl = document.getElementById('fs-leads');
+    const reviewsList = document.getElementById('reviews-list');
+    if (data.feedback) {
+      avgEl.textContent = data.feedback.total > 0 ? `${data.feedback.average}/5` : '—';
+      countEl.textContent = data.feedback.total;
+    }
+    if (data.leads) {
+      leadsEl.textContent = data.leads.count;
+    }
+    reviewsList.innerHTML = '';
+    if (data.feedback && data.feedback.recent.length > 0) {
+      data.feedback.recent.forEach(r => {
+        const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+        const date = new Date(r.created_at).toLocaleDateString();
+        const item = document.createElement('div');
+        item.className = 'review-item';
+        item.innerHTML = `
+          <div class="review-stars">${stars}</div>
+          <div class="review-comment">${escapeHtml(r.comment || '(no comment)')}</div>
+          <div class="review-meta">${r.user_email ? escapeHtml(r.user_email) + ' · ' : ''}${date} · ${escapeHtml(r.page || '')}</div>
+        `;
+        reviewsList.appendChild(item);
+      });
+    } else {
+      reviewsList.innerHTML = '<p class="muted" style="color: var(--text-dim); font-size: 0.9rem;">No ratings yet. Share the demo URL to get them.</p>';
+    }
   }
 
   // ─── Auth bar (shared) ───

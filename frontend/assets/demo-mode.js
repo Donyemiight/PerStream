@@ -33,6 +33,8 @@
     activeSession: null,
     meterInterval: null,
     listenerInterval: null,
+    feedback: [],                   // user ratings + comments (in-memory only)
+    leads: [],                     // early-access signups
   };
 
   function usd(amount) { return (amount || 0) / 1_000_000; }
@@ -164,7 +166,73 @@
         earningsLive: usd(state.creatorEarnings),
         earningsRecorded: usd(state.creatorEarnings),
         tracks: DEMO_TRACKS,
+        feedback: {
+          total: state.feedback.length,
+          average: state.feedback.length
+            ? Math.round(state.feedback.reduce((s, f) => s + f.rating, 0) / state.feedback.length * 10) / 10
+            : 0,
+          recent: state.feedback.slice(-10).reverse(),
+        },
+        leads: { count: state.leads.length },
       });
+    }
+
+    // POST /api/feedback
+    if (method === 'POST' && path === '/api/feedback') {
+      const body = JSON.parse(opts.body || '{}');
+      const rating = parseInt(body.rating, 10);
+      if (!rating || rating < 1 || rating > 5) {
+        return json({ error: 'rating must be 1-5' }, 400);
+      }
+      const entry = {
+        id: state.feedback.length + 1,
+        user_email: body.userEmail || null,
+        user_handle: body.userHandle || null,
+        track_id: body.trackId || null,
+        rating,
+        comment: String(body.comment || '').slice(0, 2000),
+        page: body.page || '',
+        created_at: Date.now(),
+      };
+      state.feedback.push(entry);
+      return json({ ok: true, id: entry.id });
+    }
+
+    // GET /api/feedback/stats
+    if (method === 'GET' && path === '/api/feedback/stats') {
+      const total = state.feedback.length;
+      const avg = total ? Math.round(state.feedback.reduce((s, f) => s + f.rating, 0) / total * 10) / 10 : 0;
+      const distribution = {};
+      for (let i = 1; i <= 5; i++) distribution[i] = state.feedback.filter(f => f.rating === i).length;
+      return json({ total, average: avg, distribution, recent: state.feedback.slice(-10).reverse() });
+    }
+
+    // GET /api/feedback
+    if (method === 'GET' && path === '/api/feedback') {
+      return json({ feedback: state.feedback.slice(-parseInt(req.query.limit || '50', 10)).reverse() });
+    }
+
+    // POST /api/lead
+    if (method === 'POST' && path === '/api/lead') {
+      const body = JSON.parse(opts.body || '{}');
+      if (!body.email || !body.email.includes('@')) {
+        return json({ error: 'valid email required' }, 400);
+      }
+      const lead = {
+        id: state.leads.length + 1,
+        email: body.email.toLowerCase().trim(),
+        role: body.role || null,
+        useCase: body.useCase || null,
+        source: body.source || null,
+        created_at: Date.now(),
+      };
+      state.leads.push(lead);
+      return json({ ok: true });
+    }
+
+    // GET /api/lead/count
+    if (method === 'GET' && path === '/api/lead/count') {
+      return json({ count: state.leads.length });
     }
 
     // Fallback: real fetch

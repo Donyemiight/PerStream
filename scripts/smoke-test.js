@@ -182,6 +182,47 @@ async function main() {
     } else fail('agent listen', JSON.stringify(r));
   } catch (e) { fail('agent listen', e.message); }
 
+  // 13. Submit feedback (rating + comment)
+  try {
+    const r = await req('POST', '/api/feedback', {
+      rating: 5,
+      comment: 'This is a smoke test rating',
+      userEmail: 'smoke-test@perstream.fm',
+      page: '/listen.html',
+    });
+    if (r.status === 200 && r.body.ok) {
+      pass(`POST /api/feedback → rating recorded`);
+    } else fail('feedback', JSON.stringify(r));
+  } catch (e) { fail('feedback', e.message); }
+
+  // 14. Get feedback stats
+  try {
+    const r = await req('GET', '/api/feedback/stats');
+    if (r.status === 200 && typeof r.body.total === 'number' && r.body.total >= 1) {
+      pass(`GET /api/feedback/stats → ${r.body.total} ratings, avg ${r.body.average}/5`);
+    } else fail('feedback stats', JSON.stringify(r));
+  } catch (e) { fail('feedback stats', e.message); }
+
+  // 15. Capture early-access lead
+  try {
+    const r = await req('POST', '/api/lead', {
+      email: 'lead-test@perstream.fm',
+      role: 'podcaster',
+      useCase: 'Test early access signup',
+    });
+    if (r.status === 200 && r.body.ok) {
+      pass(`POST /api/lead → early-access signup recorded`);
+    } else fail('lead', JSON.stringify(r));
+  } catch (e) { fail('lead', e.message); }
+
+  // 16. Get lead count
+  try {
+    const r = await req('GET', '/api/lead/count');
+    if (r.status === 200 && r.body.count >= 1) {
+      pass(`GET /api/lead/count → ${r.body.count} leads`);
+    } else fail('lead count', JSON.stringify(r));
+  } catch (e) { fail('lead count', e.message); }
+
   console.log(`\n[test] ${passed} passed, ${failures} failed\n`);
   db.flushSync();
   server.close();

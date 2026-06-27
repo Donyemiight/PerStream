@@ -498,3 +498,51 @@ button { font: inherit; cursor: pointer; }
 }
 
 .track-stat-row strong { color: var(--text); font-family: ui-monospace, monospace; }
+
+/* ─── Feedback summary (creator dashboard) ─── */
+.feedback-summary {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+.feedback-summary h3 { font-size: 1.3rem; margin-bottom: 1rem; }
+.feedback-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 600px) {
+  .feedback-stats-row { grid-template-columns: 1fr; }
+}
+.fs-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: center;
+}
+.fs-value {
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 0.25rem;
+}
+.fs-label { font-size: 0.85rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+.recent-reviews h4 { font-size: 1rem; margin-bottom: 0.75rem; color: var(--text-dim); }
+.review-item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.review-stars { color: var(--accent-3); font-size: 0.95rem; margin-bottom: 0.25rem; }
+.review-comment { color: var(--text); font-size: 0.9rem; }
+.review-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
