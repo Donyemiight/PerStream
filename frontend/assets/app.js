@@ -118,6 +118,7 @@ const PerStream = (() => {
       return;
     }
     const { track } = await r.json();
+    currentTrack = track;
 
     document.getElementById('player-title').textContent = track.title;
     document.getElementById('player-creator').textContent = track.creator ? `@${track.creator.handle}` : 'Unknown';
@@ -151,16 +152,23 @@ const PerStream = (() => {
 
   let activeSession = null;
   let tickPollInterval = null;
+  let currentTrack = null;
 
   function setupPlayerHandlers(track, streamData) {
     const audio = document.getElementById('audio');
 
-    // If we have streamData, set up audio + balance display
-    if (streamData) {
+    // Always set the audio src, even in 402 case, so play button has something to play
+    // after the user deposits and the stream call is retried.
+    if (streamData && streamData.audioUrl) {
       audio.src = streamData.audioUrl;
       const balance = streamData.balanceMicroUsdc ?? 0;
       document.getElementById('stat-balance').textContent = formatUsdc(balance);
       document.getElementById('stat-status').textContent = 'Ready — press play';
+    } else {
+      // 402 case — use the track's audioUrl from DEMO_TRACKS (passed in via track.audioUrl)
+      // or fall back to a known silent wav. The play() call will be intercepted
+      // by our startSession handler which checks for valid session.
+      audio.src = track.audioUrl || 'assets/demo-loop-15s.wav';
     }
 
     const startSession = async () => {
@@ -206,6 +214,20 @@ const PerStream = (() => {
     // Deposit buttons — always wired, even when 402 returned
     document.getElementById('btn-deposit').onclick = () => deposit(1);
     document.getElementById('btn-deposit-big').onclick = () => deposit(5);
+
+    // Start streaming button — explicit fallback for mobile browsers that may
+    // not fire 'play' event correctly. Calls audio.play() and startSession directly.
+    const btnStart = document.getElementById('btn-start-stream');
+    if (btnStart) {
+      btnStart.onclick = async () => {
+        try {
+          await audio.play();   // user gesture — should work on mobile
+        } catch (e) {
+          console.warn('[start] audio.play() rejected:', e.message);
+        }
+        if (!activeSession) await startSession();
+      };
+    }
   }
 
   async function deposit(amountUsd) {
@@ -233,6 +255,12 @@ const PerStream = (() => {
       const prev = status.textContent;
       status.textContent = `✓ +$${amountUsd} USDC added`;
       setTimeout(() => { if (status.textContent.startsWith('✓')) status.textContent = prev; }, 3000);
+
+      // If we were stuck at 402, retry the stream call to clear it
+      if (prev && prev.includes('402') && currentTrack) {
+        console.log('[deposit] retrying stream for track', currentTrack.id);
+        setTimeout(() => selectTrack(currentTrack.id), 400);
+      }
     } catch (err) {
       console.error('[deposit] error:', err);
       showError(`Deposit failed: ${err.message}`);
