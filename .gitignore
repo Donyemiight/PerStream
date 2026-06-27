@@ -2,7 +2,8 @@ node_modules/
 data/
 *.db
 *.log
-.env
 .env.local
 .DS_Store
 *.placeholder.txt
+
+# Note: .env IS tracked (it's the bundled sample env, no real secrets)
