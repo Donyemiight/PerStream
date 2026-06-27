@@ -4,6 +4,12 @@
 >
 > Time-to-read: 90 seconds.
 
+## Track
+
+**RFB 4 — Streaming & Continuous Payments** (primary)
+
+Also fits **RFB 6 — Creator & Publisher Monetization** (secondary, podcasts pay-per-listen).
+
 ---
 
 ## The 30-second version

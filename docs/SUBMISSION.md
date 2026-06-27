@@ -55,8 +55,11 @@ https://github.com/Donyemiight/PerStream
 [Public cloudflared URL — replace after deploying]
 
 ## Track / category
-Creator economy + AI agents (primary)
-Nanomoney / micropayments (secondary)
+**RFB 4 — Streaming & Continuous Payments** (primary)
+
+This is the canonical match: PerStream is pay-per-second for audio, exactly what RFB 4 describes. The brief's example use cases ("live media paid per second watched", "real-time transcription paid per second of audio") are precisely PerStream's core mechanic.
+
+**Secondary fit: RFB 6 — Creator & Publisher Monetization** (podcasts pay-per-listen, citizen journalism tips).
 
 ## Team
 Solo — Oluyemi (donyemiight) (donYemiight on X, yemiiight on Discord). Returning Lepton builder; previously shipped TradeMouth on Canteen.

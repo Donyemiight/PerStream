@@ -4,6 +4,12 @@
 >
 > _Lepton Agents Hackathon · Canteen × Circle · June 15–29, 2026_
 
+## Track: RFB 4 — Streaming & Continuous Payments
+
+PerStream is submitted under **RFB 4**, the most direct match. The brief's example use case — "live media paid per second watched" and "real-time transcription paid per second of audio" — is exactly PerStream's core mechanic.
+
+Secondary fit: **RFB 6 — Creator & Publisher Monetization** (podcasts pay-per-listen).
+
 ---
 
 ## 1. The Problem (per Canteen's thesis)

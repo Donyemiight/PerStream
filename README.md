@@ -6,6 +6,8 @@
 
 **Tagline:** _Every second, paid._
 
+**Track:** RFB 4 — Streaming & Continuous Payments (also fits RFB 6)
+
 ---
 
 ## What is this?
