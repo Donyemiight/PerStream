@@ -184,6 +184,13 @@ app.post('/api/auth/login', async (req, res) => {
         wallet: prov.wallet,
         role: 'listener',
       });
+      // Pre-fund every new user with $5 USDC so the demo is frictionless.
+      // The whole 'deposit to listen' dance is friction that distracts from
+      // the actual per-second mechanic the brief is about.
+      if (arc.MODE === 'mock') {
+        await arc.deposit({ listener: user.wallet, amountMicroUsdc: 5_000_000 });
+        console.log('[auth] pre-funded new user ' + user.handle + ' with $5 USDC');
+      }
     }
 
     res.json({ user, wallet: { address: user.wallet, mode: wallet.MODE } });
