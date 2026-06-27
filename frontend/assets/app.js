@@ -260,15 +260,21 @@ const PerStream = (() => {
 
   async function deposit(amountUsd) {
     try {
+      console.log('[deposit] start, amountUsd=' + amountUsd + ' currentUser=' + (currentUser && currentUser.id));
       if (!currentUser) {
+        console.log('[deposit] no currentUser, prompting login');
         promptLogin();
         return;
       }
+      const url = API_BASE + '/api/listen/deposit';
+      console.log('[deposit] POST ' + url);
       const r = await authedFetch('/api/listen/deposit', {
         method: 'POST',
         body: JSON.stringify({ amountUsd }),
       });
+      console.log('[deposit] response status=' + r.status);
       const data = await r.json();
+      console.log('[deposit] response body=' + JSON.stringify(data));
       if (!data.ok) {
         showError(data.reason || 'deposit_failed');
         return;
@@ -289,6 +295,7 @@ const PerStream = (() => {
         }, 800);
       }
     } catch (err) {
+      console.error('[deposit] error:', err);
       showError(`Deposit failed: ${err.message}`);
     }
   }
