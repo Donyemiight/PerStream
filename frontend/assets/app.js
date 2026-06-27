@@ -7,9 +7,9 @@
 
 const PerStream = (() => {
   const API_BASE = window.PERSTREAM_API ||
-    (window.location.hostname === 'localhost'
+    (window.location.hostname === 'localhost' || window.location.port
       ? 'http://localhost:3000'
-      : `${window.location.protocol}//${window.location.hostname}:3000`);
+      : `${window.location.protocol}//${window.location.host}`);
 
   const STORAGE_KEY = 'perstream_user';
 
