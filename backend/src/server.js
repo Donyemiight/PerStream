@@ -25,13 +25,29 @@
  *     and ticks once per second via the meter.
  */
 
-require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+// Robust dotenv loading: works on Node 18+ including v26 where require() is stricter.
+const path = require('path');
+const fs = require('fs');
+const dotenvPath = path.join(__dirname, '..', '.env');
+
+// Diagnostic — print where we're looking for things (helps debug Termux issues)
+console.log('[startup] node:', process.version);
+console.log('[startup] cwd:', process.cwd());
+console.log('[startup] __dirname:', __dirname);
+console.log('[startup] .env exists at', dotenvPath, '?', fs.existsSync(dotenvPath));
+console.log('[startup] backend/node_modules exists?', fs.existsSync(path.join(__dirname, '..', 'node_modules')));
+console.log('[startup] dotenv in node_modules?', fs.existsSync(path.join(__dirname, '..', 'node_modules', 'dotenv')));
+
+try {
+  require('dotenv').config({ path: dotenvPath });
+  console.log('[startup] dotenv loaded');
+} catch (e) {
+  console.warn('[startup] dotenv not loaded (continuing without .env):', e.message);
+}
 
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const rateLimit = require('express-rate-limit');
 
 const db = require('./db');
