@@ -21,9 +21,10 @@
   ];
 
   const DEMO_TRACKS = [
-    { id: 'trk-welcome', creator_id: 'demo-creator', title: 'PerStream Theme — Welcome to paid seconds', description: 'Hear why per-second payments change everything for creators and listeners. 26 seconds.', audioUrl: 'assets/welcome.mp3', duration_sec: 26, price_per_sec: 300, plays: 142, earnings_total: 4260000 },
-    { id: 'trk-pitch', creator_id: 'demo-creator', title: 'The Cold-Start Cliff — why per-second beats subscriptions', description: 'A 25-second pitch explaining why your balance should only tick while audio plays.', audioUrl: 'assets/pitch.mp3', duration_sec: 25, price_per_sec: 500, plays: 89, earnings_total: 8910000 },
-    { id: 'trk-loop', creator_id: 'demo-creator', title: 'Demo Loop — short spoken test track', description: 'Press play, watch the meter tick, pause to stop. The whole point of PerStream in 17 seconds.', audioUrl: 'assets/loop.mp3', duration_sec: 17, price_per_sec: 100, plays: 256, earnings_total: 1280000 },
+    { id: 'trk-podcast', creator_id: 'demo-creator', title: 'Ep. 1: The Cold-Start Cliff — why per-second beats subscriptions', description: 'A full 4-minute 16-second podcast episode. How subscription media kills 90% of new shows, and how a per-second model flips the economics. Press play and let the meter run.', audioUrl: 'assets/podcast-full.mp3', duration_sec: 256, price_per_sec: 100, plays: 89, earnings_total: 2278400 },
+    { id: 'trk-welcome', creator_id: 'demo-creator', title: 'PerStream Theme — 26-second welcome', description: 'A short welcome message. Use this to feel the per-second tick without committing time.', audioUrl: 'assets/welcome.mp3', duration_sec: 26, price_per_sec: 300, plays: 142, earnings_total: 4260000 },
+    { id: 'trk-pitch', creator_id: 'demo-creator', title: 'Pitch: why pay per second?', description: 'A 25-second pitch explaining why your balance should only tick while audio plays.', audioUrl: 'assets/pitch.mp3', duration_sec: 25, price_per_sec: 500, plays: 89, earnings_total: 8910000 },
+    { id: 'trk-loop', creator_id: 'demo-creator', title: 'Demo Loop — 17-second spoken test track', description: 'Press play, watch the meter tick, pause to stop. The whole point of PerStream in 17 seconds.', audioUrl: 'assets/loop.mp3', duration_sec: 17, price_per_sec: 100, plays: 256, earnings_total: 1280000 },
   ];
 
   const state = {

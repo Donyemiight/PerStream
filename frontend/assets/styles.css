@@ -303,6 +303,31 @@ button { font: inherit; cursor: pointer; }
   color: var(--text-muted);
 }
 
+/* ─── How to use ─── */
+.how-to-use {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin: 1.5rem 0 2rem;
+}
+.how-to-use summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--accent);
+  list-style: none;
+}
+.how-to-use summary::before { content: '📖 '; }
+.how-to-use[open] summary::before { content: '📕 '; }
+.how-to-use ol { margin: 1rem 0 0.5rem; padding-left: 1.5rem; line-height: 1.7; }
+.how-to-use code {
+  background: var(--bg-card-2);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+.how-to-use .muted { margin-top: 0.75rem; }
+
 /* ─── Tracks list ─── */
 .tracks-section h2 { margin-bottom: 1rem; font-size: 1.3rem; }
 
