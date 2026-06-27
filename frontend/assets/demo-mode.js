@@ -12,8 +12,28 @@
 (function() {
   'use strict';
 
-  // Override the API base to use the local simulation
-  window.PERSTREAM_API = 'demo';
+  // Demo mode is opt-in. If the host has a real backend, the user can still
+  // force demo mode by setting `?demo=1` in the URL, or by setting
+  // `window.PERSTREAM_API_MODE = 'demo'` before this script loads.
+  // Otherwise we leave window.PERSTREAM_API unset so app.js auto-detects
+  // the real backend on the same host.
+  const wantsDemo = window.PERSTREAM_API_MODE === 'demo'
+    || new URLSearchParams(window.location.search).get('demo') === '1';
+
+  // Heuristic: if the host is a known static preview (no backend), force demo mode
+  const host = window.location.hostname;
+  const isStaticPreview = host.endsWith('.space.minimax.io')
+    || host.endsWith('.minimax.io')
+    || host === 'localhost' && !window.location.port; // localhost without :3000
+
+  if (wantsDemo || isStaticPreview) {
+    window.PERSTREAM_API = 'demo';
+    console.log('[demo-mode] enabled (simulated backend)');
+  } else {
+    // Real backend detected — don't intercept fetch, just exit
+    console.log('[demo-mode] disabled (real backend on ' + host + ')');
+    return;
+  }
 
   const DEMO_USERS = [
     { id: 'demo-creator', handle: 'perstream-demo', email: 'demo-creator@perstream.fm', wallet: '0x9b198314420ffc0f7a5e4895a2cfcc12d0b53493', role: 'creator' },

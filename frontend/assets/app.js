@@ -1,15 +1,21 @@
 /**
  * PerStream Frontend — shared client logic
  *
- * API base URL is auto-detected: same host as the page, port 3000 by default.
- * In production, set window.PERSTREAM_API to override.
+ * API base URL is auto-detected:
+ *  - On the same host as the page (no port) when the backend serves both
+ *  - localhost:3000 when developing locally with separate frontend/backend
+ * Override with window.PERSTREAM_API if needed.
  */
 
 const PerStream = (() => {
+  // If window.PERSTREAM_API is set, use that.
+  // Otherwise, if we're not on localhost AND there's no explicit port in the URL,
+  // assume the API is on the same host (single-port deploy via tunnel).
+  // Otherwise default to :3000.
   const API_BASE = window.PERSTREAM_API ||
-    (window.location.hostname === 'localhost'
+    (window.location.hostname === 'localhost' || window.location.port
       ? 'http://localhost:3000'
-      : `${window.location.protocol}//${window.location.hostname}:3000`);
+      : `${window.location.protocol}//${window.location.host}`);
 
   const STORAGE_KEY = 'perstream_user';
 

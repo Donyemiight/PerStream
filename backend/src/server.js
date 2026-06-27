@@ -75,6 +75,18 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 
+// Trust the first proxy (Cloudflare Tunnel / reverse proxy) so X-Forwarded-For works
+app.set('trust proxy', 1);
+
+// Serve frontend (static files) — so the same URL serves both UI and API
+const FRONTEND_DIR = path.join(__dirname, '..', '..', 'frontend');
+if (fs.existsSync(FRONTEND_DIR)) {
+  app.use(express.static(FRONTEND_DIR, { maxAge: 0, etag: false }));
+  console.log('[startup] serving static frontend from', FRONTEND_DIR);
+} else {
+  console.warn('[startup] frontend dir not found at', FRONTEND_DIR);
+}
+
 // Rate limit
 app.use('/api/', rateLimit({
   windowMs: 60_000,
