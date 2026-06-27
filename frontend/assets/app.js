@@ -13,6 +13,24 @@ const PerStream = (() => {
 
   const STORAGE_KEY = 'perstream_user';
 
+  // ─── Toast helper (defined at top so all functions can use it) ───
+  function showToast(message, type) {
+    let toast = document.getElementById('perstream-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'perstream-toast';
+      toast.style.cssText = 'position:fixed; top:80px; left:50%; transform:translateX(-50%); padding:12px 20px; border-radius:8px; font-weight:600; z-index:9999; max-width:90%; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.3); transition: opacity 0.3s; font-family: system-ui, -apple-system, sans-serif;';
+      document.body.appendChild(toast);
+    }
+    const colors = { info: '#3b82f6', success: '#10b981', error: '#ef4444' };
+    toast.style.background = colors[type] || colors.info;
+    toast.style.color = '#fff';
+    toast.textContent = message;
+    toast.style.opacity = '1';
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => { toast.style.opacity = '0'; }, type === 'error' ? 5000 : 3000);
+  }
+
   // ─── State ───
   let currentUser = null;
 
