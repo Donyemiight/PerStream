@@ -212,19 +212,32 @@ const PerStream = (() => {
 
   async function deposit(amountUsd) {
     try {
+      console.log('[deposit] starting, amountUsd=', amountUsd, 'currentUser=', currentUser?.id);
+      if (!currentUser) {
+        promptLogin();
+        return;
+      }
       const r = await authedFetch('/api/listen/deposit', {
         method: 'POST',
         body: JSON.stringify({ amountUsd }),
       });
+      console.log('[deposit] response:', r.status, r.statusText);
       const data = await r.json();
+      console.log('[deposit] body:', data);
       if (!data.ok) {
         showError(data.reason || 'deposit_failed');
         return;
       }
       const balanceMicro = data.balance;
       document.getElementById('stat-balance').textContent = formatUsdc(balanceMicro);
+      // Also flash a success message
+      const status = document.getElementById('stat-status');
+      const prev = status.textContent;
+      status.textContent = `✓ +$${amountUsd} USDC added`;
+      setTimeout(() => { if (status.textContent.startsWith('✓')) status.textContent = prev; }, 3000);
     } catch (err) {
-      showError(err.message);
+      console.error('[deposit] error:', err);
+      showError(`Deposit failed: ${err.message}`);
     }
   }
 
