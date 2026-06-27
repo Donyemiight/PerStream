@@ -1,7 +1,7 @@
 # PerStream Live URLs
 
 ## Current Live Demo
-**https://flows-receptor-placement-burner.trycloudflare.com**
+**https://providence-musician-civic-watt.trycloudflare.com**
 
 Status: ACTIVE (since 2026-06-27 21:09 UTC)
 
@@ -27,7 +27,7 @@ The frontend is also deployed at a stable static URL for read-only preview.
 ## Backup URLs (this session)
 | URL | Active |
 |-----|--------|
-| flows-receptor-placement-burner.trycloudflare.com | YES |
+| providence-musician-civic-watt.trycloudflare.com | YES |
 | invision-specified-caribbean-occupational.trycloudflare.com | DEAD |
 | jerry-newport-textbooks-importantly.trycloudflare.com | DEAD |
 | destination-hanging-boating-months.trycloudflare.com | DEAD |
