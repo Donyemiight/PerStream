@@ -1,21 +1,15 @@
 /**
  * PerStream Frontend — shared client logic
  *
- * API base URL is auto-detected:
- *  - On the same host as the page (no port) when the backend serves both
- *  - localhost:3000 when developing locally with separate frontend/backend
- * Override with window.PERSTREAM_API if needed.
+ * API base URL is auto-detected: same host as the page, port 3000 by default.
+ * In production, set window.PERSTREAM_API to override.
  */
 
 const PerStream = (() => {
-  // If window.PERSTREAM_API is set, use that.
-  // Otherwise, if we're not on localhost AND there's no explicit port in the URL,
-  // assume the API is on the same host (single-port deploy via tunnel).
-  // Otherwise default to :3000.
   const API_BASE = window.PERSTREAM_API ||
-    (window.location.hostname === 'localhost' || window.location.port
+    (window.location.hostname === 'localhost'
       ? 'http://localhost:3000'
-      : `${window.location.protocol}//${window.location.host}`);
+      : `${window.location.protocol}//${window.location.hostname}:3000`);
 
   const STORAGE_KEY = 'perstream_user';
 
@@ -50,21 +44,6 @@ const PerStream = (() => {
     if (!r.ok) throw new Error((await r.json()).error || 'login_failed');
     const data = await r.json();
     saveUser(data.user);
-    // Auto-deposit $5 on first sign-in so the demo is frictionless.
-    // Judges don't need to tap "+ Add 1 USDC" — the balance is ready.
-    // (The hackathon brief is about per-second payments, not about deposit UX.)
-    try {
-      const dep = await authedFetch('/api/listen/deposit', {
-        method: 'POST',
-        body: JSON.stringify({ amountUsd: 5 }),
-      });
-      if (dep.ok) {
-        const depData = await dep.json();
-        console.log('[login] auto-deposited $5, balance=' + depData.balance);
-      }
-    } catch (e) {
-      console.warn('[login] auto-deposit failed (non-fatal):', e.message);
-    }
     return data.user;
   }
 
@@ -275,115 +254,37 @@ const PerStream = (() => {
 
   async function deposit(amountUsd) {
     try {
-      console.log('[deposit] start, amountUsd=' + amountUsd + ' currentUser=' + (currentUser && currentUser.id));
       if (!currentUser) {
-        console.log('[deposit] no currentUser, prompting login');
         promptLogin();
         return;
       }
-      // Show a toast immediately so the user knows the deposit is in progress
-      showToast(`Depositing $${amountUsd} USDC…`, 'info');
-      // Use raw fetch instead of authedFetch, with currentUser.id directly.
-      let r = await fetch(API_BASE + '/api/listen/deposit', {
+      const r = await authedFetch('/api/listen/deposit', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-User-Id': currentUser.id,
-        },
         body: JSON.stringify({ amountUsd }),
       });
-      console.log('[deposit] response status=' + r.status);
-      // If the user ID is stale (DB was wiped), recover by logging in again
-      if (r.status === 401) {
-        console.log('[deposit] stale user ID, re-logging in...');
-        showToast('Reconnecting to wallet...', 'info');
-        const newLogin = await fetch(API_BASE + '/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: currentUser.email }),
-        });
-        if (newLogin.ok) {
-          const newData = await newLogin.json();
-          saveUser(newData.user);
-          // Retry deposit with new user ID
-          r = await fetch(API_BASE + '/api/listen/deposit', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-User-Id': newData.user.id,
-            },
-            body: JSON.stringify({ amountUsd }),
-          });
-        }
-      }
       const data = await r.json();
-      console.log('[deposit] response body=' + JSON.stringify(data));
       if (!data.ok) {
-        showToast(`Deposit failed: ${data.reason || 'unknown error'}`, 'error');
         showError(data.reason || 'deposit_failed');
         return;
       }
       const balanceMicro = data.balance;
-      // Update balance display — find ANY element that has 'balance' in its id or shows USDC
-      const balanceEl = document.getElementById('stat-balance');
-      if (balanceEl) {
-        balanceEl.textContent = formatUsdc(balanceMicro) + ' USDC';
-        balanceEl.style.color = '#4ade80';  // green flash
-        setTimeout(() => { balanceEl.style.color = ''; }, 1500);
-      }
-      // Also force update any text matching "X.XXXXXX USDC" in case ID changed
-      document.querySelectorAll('.stat-value, .stat, [class*="balance"]').forEach(el => {
-        if (el.children.length === 0 && el.textContent && el.textContent.match(/^\d+\.\d+\s*USDC$/i)) {
-          el.textContent = formatUsdc(balanceMicro) + ' USDC';
-        }
-      });
-      // Show a big green toast for success
-      showToast(`+ $${amountUsd} USDC deposited · balance $${formatUsdc(balanceMicro)}`, 'success');
-      // Flash success in status too
+      document.getElementById('stat-balance').textContent = formatUsdc(balanceMicro);
+      // Flash success
       const status = document.getElementById('stat-status');
-      const prev = status ? status.textContent : '';
-      if (status) {
-        status.textContent = `✓ +$${amountUsd} USDC added (balance: ${formatUsdc(balanceMicro)})`;
-        setTimeout(() => {
-          if (status.textContent.startsWith('✓')) status.textContent = prev;
-        }, 3000);
-      }
+      const prev = status.textContent;
+      status.textContent = `✓ +$${amountUsd} USDC added`;
+      setTimeout(() => {
+        if (status.textContent.startsWith('✓')) status.textContent = prev;
+      }, 3000);
       // If we were stuck at 402, change status to "ready" so the user can press start
       if (prev && prev.includes('402')) {
         setTimeout(() => {
-          if (status) status.textContent = 'Ready — press Start Streaming';
+          status.textContent = 'Ready — press Start Streaming';
         }, 800);
       }
     } catch (err) {
-      console.error('[deposit] error:', err);
-      showToast(`Deposit error: ${err.message}`, 'error');
       showError(`Deposit failed: ${err.message}`);
     }
-  }
-
-  // Toast notifications — hard to miss, even on mobile
-  function showToast(message, type = 'info') {
-    let toast = document.getElementById('perstream-toast');
-    if (!toast) {
-      toast = document.createElement('div');
-      toast.id = 'perstream-toast';
-      toast.style.cssText = 'position:fixed; top:80px; left:50%; transform:translateX(-50%); padding:12px 20px; border-radius:8px; font-weight:600; z-index:9999; max-width:90%; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.3); transition: opacity 0.3s; font-family: system-ui, -apple-system, sans-serif;';
-      document.body.appendChild(toast);
-    }
-    const colors = {
-      info: { bg: '#3b82f6', fg: '#fff' },      // blue
-      success: { bg: '#10b981', fg: '#fff' },   // green
-      error: { bg: '#ef4444', fg: '#fff' },     // red
-    };
-    const c = colors[type] || colors.info;
-    toast.style.background = c.bg;
-    toast.style.color = c.fg;
-    toast.textContent = message;
-    toast.style.opacity = '1';
-    // Auto-dismiss after 3s, but keep errors longer
-    const duration = type === 'error' ? 5000 : 3000;
-    clearTimeout(toast._timeout);
-    toast._timeout = setTimeout(() => { toast.style.opacity = '0'; }, duration);
   }
 
   function startPolling(sessionId) {
