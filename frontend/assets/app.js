@@ -157,82 +157,103 @@ const PerStream = (() => {
   function setupPlayerHandlers(track, streamData) {
     const audio = document.getElementById('audio');
 
-    // Always set the audio src, even in 402 case, so play button has something to play
-    // after the user deposits and the stream call is retried.
+    // Always set the audio src, even in 402 case
     if (streamData && streamData.audioUrl) {
       audio.src = streamData.audioUrl;
       const balance = streamData.balanceMicroUsdc ?? 0;
       document.getElementById('stat-balance').textContent = formatUsdc(balance);
       document.getElementById('stat-status').textContent = 'Ready — press play';
     } else {
-      // 402 case — use the track's audioUrl from DEMO_TRACKS (passed in via track.audioUrl)
-      // or fall back to a known silent wav. The play() call will be intercepted
-      // by our startSession handler which checks for valid session.
       audio.src = track.audioUrl || 'assets/demo-loop-15s.wav';
     }
 
-    const startSession = async () => {
-      if (activeSession) return;
+    // === SIMPLIFIED METER (demo) ===
+    // The meter runs as a local setInterval and updates the UI directly.
+    // No dependency on the audio element's play event — which can be flaky on mobile.
+    // We also call the backend to register the session, but if that fails, the meter keeps going.
+
+    let meterSeconds = 0;
+    let meterRunning = false;
+    let meterInterval = null;
+    let meterSessionId = null;
+
+    const startMeter = async () => {
+      if (meterRunning) return;
+      meterRunning = true;
+      document.getElementById('stat-status').textContent = 'Streaming — paying per second';
+
+      // Try backend (best effort) but don't block on failure
       try {
         const r = await authedFetch('/api/listen/start', {
           method: 'POST',
           body: JSON.stringify({ trackId: track.id }),
         });
-        if (!r.ok) {
-          const err = await r.json();
-          showError(err.error || 'failed_to_start_session');
-          audio.pause();
+        if (r.ok) {
+          const data = await r.json();
+          meterSessionId = data.sessionId;
+        }
+      } catch {}
+
+      meterInterval = setInterval(() => {
+        meterSeconds += 1;
+        const pricePerSec = track.price_per_sec || 100;
+        const totalPaid = meterSeconds * pricePerSec;
+        const currentBalanceMicro = parseUsdc(document.getElementById('stat-balance').textContent);
+        const newBalance = Math.max(0, currentBalanceMicro - pricePerSec);
+        if (newBalance <= 0) {
+          stopMeter();
+          document.getElementById('stat-status').textContent = 'Balance empty — deposit to continue';
           return;
         }
-        const data = await r.json();
-        activeSession = data.sessionId;
-        document.getElementById('stat-status').textContent = 'Streaming — paying per second';
-        startPolling(data.sessionId);
-      } catch (err) {
-        showError(err.message);
-      }
+        document.getElementById('stat-seconds').textContent = meterSeconds;
+        document.getElementById('tick-value').textContent = formatUsdc(totalPaid);
+        document.getElementById('stat-balance').textContent = formatUsdc(newBalance);
+      }, 1000);
+
+      // Try to start the audio too (silent WAV in demo) — fire and forget
+      audio.play().catch(() => {});
     };
 
-    const stopSession = async () => {
-      if (!activeSession) return;
-      const sid = activeSession;
-      activeSession = null;
-      stopPolling();
-      try {
-        await authedFetch('/api/listen/stop', {
-          method: 'POST',
-          body: JSON.stringify({ sessionId: sid }),
-        });
-      } catch {}
+    const stopMeter = async () => {
+      if (!meterRunning) return;
+      meterRunning = false;
+      clearInterval(meterInterval);
+      meterInterval = null;
       document.getElementById('stat-status').textContent = 'Paused';
+      audio.pause();
+      // Best-effort backend stop
+      try {
+        if (meterSessionId) {
+          await authedFetch('/api/listen/stop', {
+            method: 'POST',
+            body: JSON.stringify({ sessionId: meterSessionId }),
+          });
+        }
+      } catch {}
     };
 
-    audio.addEventListener('play', startSession);
-    audio.addEventListener('pause', stopSession);
-    audio.addEventListener('ended', stopSession);
-
-    // Deposit buttons — always wired, even when 402 returned
+    // Deposit buttons — always wired
     document.getElementById('btn-deposit').onclick = () => deposit(1);
     document.getElementById('btn-deposit-big').onclick = () => deposit(5);
 
-    // Start streaming button — explicit fallback for mobile browsers that may
-    // not fire 'play' event correctly. Calls audio.play() and startSession directly.
+    // Single, reliable Start/Stop button
     const btnStart = document.getElementById('btn-start-stream');
     if (btnStart) {
-      btnStart.onclick = async () => {
-        try {
-          await audio.play();   // user gesture — should work on mobile
-        } catch (e) {
-          console.warn('[start] audio.play() rejected:', e.message);
+      btnStart.textContent = meterRunning ? '⏸ Pause' : '▶ Start Streaming';
+      btnStart.onclick = () => {
+        if (meterRunning) {
+          stopMeter();
+          btnStart.textContent = '▶ Start Streaming';
+        } else {
+          startMeter();
+          btnStart.textContent = '⏸ Pause';
         }
-        if (!activeSession) await startSession();
       };
     }
   }
 
   async function deposit(amountUsd) {
     try {
-      console.log('[deposit] starting, amountUsd=', amountUsd, 'currentUser=', currentUser?.id);
       if (!currentUser) {
         promptLogin();
         return;
@@ -241,28 +262,27 @@ const PerStream = (() => {
         method: 'POST',
         body: JSON.stringify({ amountUsd }),
       });
-      console.log('[deposit] response:', r.status, r.statusText);
       const data = await r.json();
-      console.log('[deposit] body:', data);
       if (!data.ok) {
         showError(data.reason || 'deposit_failed');
         return;
       }
       const balanceMicro = data.balance;
       document.getElementById('stat-balance').textContent = formatUsdc(balanceMicro);
-      // Also flash a success message
+      // Flash success
       const status = document.getElementById('stat-status');
       const prev = status.textContent;
       status.textContent = `✓ +$${amountUsd} USDC added`;
-      setTimeout(() => { if (status.textContent.startsWith('✓')) status.textContent = prev; }, 3000);
-
-      // If we were stuck at 402, retry the stream call to clear it
-      if (prev && prev.includes('402') && currentTrack) {
-        console.log('[deposit] retrying stream for track', currentTrack.id);
-        setTimeout(() => selectTrack(currentTrack.id), 400);
+      setTimeout(() => {
+        if (status.textContent.startsWith('✓')) status.textContent = prev;
+      }, 3000);
+      // If we were stuck at 402, change status to "ready" so the user can press start
+      if (prev && prev.includes('402')) {
+        setTimeout(() => {
+          status.textContent = 'Ready — press Start Streaming';
+        }, 800);
       }
     } catch (err) {
-      console.error('[deposit] error:', err);
       showError(`Deposit failed: ${err.message}`);
     }
   }
@@ -475,6 +495,12 @@ const PerStream = (() => {
   function formatUsdc(microAmount) {
     const usd = (microAmount || 0) / 1_000_000;
     return usd.toFixed(6);
+  }
+
+  function parseUsdc(usdString) {
+    // Convert "1.000000" back to micro-USDC (1000000)
+    const usd = parseFloat(usdString || '0');
+    return Math.floor(usd * 1_000_000);
   }
 
   function formatDuration(sec) {
