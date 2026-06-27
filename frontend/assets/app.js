@@ -157,12 +157,17 @@ const PerStream = (() => {
   function setupPlayerHandlers(track, streamData) {
     const audio = document.getElementById('audio');
 
-    // Always set the audio src, even in 402 case
+    // Set the audio src, but DISABLE the native controls and pause it
+    // so it can't play unless the user explicitly starts streaming
+    // (i.e. the per-second paywall is enforced)
+    audio.controls = false;
+    audio.pause();
+    audio.removeAttribute('autoplay');
     if (streamData && streamData.audioUrl) {
       audio.src = streamData.audioUrl;
       const balance = streamData.balanceMicroUsdc ?? 0;
       document.getElementById('stat-balance').textContent = formatUsdc(balance);
-      document.getElementById('stat-status').textContent = 'Ready — press play';
+      document.getElementById('stat-status').textContent = 'Deposit to listen — or press Start Streaming';
     } else {
       audio.src = track.audioUrl || 'assets/loop.mp3';
     }

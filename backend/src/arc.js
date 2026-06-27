@@ -129,13 +129,22 @@ async function liveDeposit({ listener, amountMicroUsdc }) {
   // In production, the listener would sign the deposit from their own wallet.
   const client = await getLiveClient();
   const amountUsd = fromMicroUsdc(amountMicroUsdc);
-  const result = await client.deposit(amountUsd.toFixed(6));
-  return {
-    ok: true,
-    balance: amountMicroUsdc, // simplified — caller should query getBalances() for truth
-    depositTxHash: result.depositTxHash,
-    approvalTxHash: result.approvalTxHash,
-  };
+  try {
+    const result = await client.deposit(amountUsd.toFixed(6));
+    return {
+      ok: true,
+      balance: amountMicroUsdc,
+      depositTxHash: result.depositTxHash,
+      approvalTxHash: result.approvalTxHash,
+    };
+  } catch (err) {
+    console.error('[liveDeposit] failed:', err.message);
+    return {
+      ok: false,
+      reason: err.message || 'deposit_failed',
+      balance: 0,
+    };
+  }
 }
 
 // Live mode "demo faucet": withdraws USDC from the seller's Gateway balance
@@ -145,24 +154,40 @@ async function liveDeposit({ listener, amountMicroUsdc }) {
 async function sellerFundUser({ recipient, amountMicroUsdc }) {
   const client = await getLiveClient();
   const amountUsd = fromMicroUsdc(amountMicroUsdc);
-  // First ensure the seller has USDC in their Gateway balance
-  // (deposits wallet → Gateway if needed)
-  const balances = await client.getBalances();
-  // BigInt comparison (viem uses .lt() but we use plain > to be safe)
-  if (BigInt(balances.gateway.available) < BigInt(amountMicroUsdc)) {
-    console.log('[sellerFundUser] seller Gateway balance low, depositing from wallet');
-    await client.deposit(amountUsd.toFixed(6));
+  try {
+    // First ensure the seller has USDC in their Gateway balance
+    // (deposits wallet → Gateway if needed)
+    const balances = await client.getBalances();
+    // BigInt comparison (viem uses .lt() but we use plain > to be safe)
+    if (BigInt(balances.gateway.available) < BigInt(amountMicroUsdc)) {
+      console.log('[sellerFundUser] seller Gateway balance low, depositing from wallet');
+      try {
+        await client.deposit(amountUsd.toFixed(6));
+      } catch (e) {
+        // If seller can't deposit, log it but don't crash
+        console.warn('[sellerFundUser] seller deposit failed (likely insufficient wallet balance):', e.message);
+      }
+    }
+    // Now withdraw from Gateway to the recipient's wallet
+    const result = await client.withdraw(amountUsd.toFixed(6), {
+      recipient,
+    });
+    return {
+      ok: true,
+      fundTxHash: result.mintTxHash,
+      amountMicro: amountMicroUsdc,
+      recipient,
+    };
+  } catch (err) {
+    // Don't crash the backend — just return failure
+    console.error('[sellerFundUser] failed:', err.message);
+    return {
+      ok: false,
+      reason: err.message || 'fund_failed',
+      amountMicro: 0,
+      recipient,
+    };
   }
-  // Now withdraw from Gateway to the recipient's wallet
-  const result = await client.withdraw(amountUsd.toFixed(6), {
-    recipient,
-  });
-  return {
-    ok: true,
-    fundTxHash: result.mintTxHash,
-    amountMicro: amountMicroUsdc,
-    recipient,
-  };
 }
 
 async function liveTick({ sessionId, listener, creator, pricePerSec, seconds }) {

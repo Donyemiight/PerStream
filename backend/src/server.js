@@ -207,10 +207,26 @@ app.post('/api/auth/login', async (req, res) => {
             recipient: user.wallet,
             amountMicroUsdc: 5_000_000,  // $5
           });
-          console.log('[auth] live mode: funded new user ' + user.handle + ' with $5 USDC, tx=' + result.fundTxHash);
+          if (result.ok) {
+            console.log('[auth] live mode: funded new user ' + user.handle + ' with $5 USDC, tx=' + result.fundTxHash);
+          } else {
+            console.warn('[auth] live mode funding failed for ' + user.handle + ':', result.reason);
+            console.warn('[auth] demo wallet empty — visit https://faucet.circle.com and send 20 USDC to seller to refill');
+            // Fall back to in-memory funding so the demo still works
+            // (user can use the per-second tick feature even without on-chain balance)
+            try {
+              await arc.deposit({ listener: user.wallet, amountMicroUsdc: 5_000_000 });
+              console.log('[auth] in-memory fallback: gave ' + user.handle + ' $5 USDC for demo');
+            } catch (e2) {
+              console.error('[auth] in-memory fallback also failed:', e2.message);
+            }
+          }
         } catch (e) {
-          console.warn('[auth] live mode funding failed for ' + user.handle + ':', e.message);
-          // Continue anyway — user can still try to deposit themselves
+          // CRITICAL: never crash the backend on funding failure
+          console.warn('[auth] live mode funding error for ' + user.handle + ':', e.message);
+          try {
+            await arc.deposit({ listener: user.wallet, amountMicroUsdc: 5_000_000 });
+          } catch (e2) {}
         }
       }
     }
@@ -612,6 +628,17 @@ function makeAbsoluteUrl(urlOrPath, req) {
 // ───────────────────────────────────────────────
 // Boot (only when run directly, not when imported for tests)
 // ───────────────────────────────────────────────
+
+// Global error handlers — never crash the backend on uncaught errors
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err && err.message ? err.message : err);
+  console.error(err && err.stack ? err.stack : '');
+  // Don't exit — keep the server running
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+  // Don't exit — keep the server running
+});
 
 if (require.main === module) {
   app.listen(PORT, () => {
