@@ -385,15 +385,23 @@ app.post('/api/listen/start', authMiddleware, (req, res) => {
   });
 });
 
-app.post('/api/listen/stop', authMiddleware, (req, res) => {
+app.post('/api/listen/stop', authMiddleware, async (req, res) => {
   const { sessionId } = req.body || {};
   if (!sessionId) return res.status(400).json({ error: 'session_id_required' });
 
-  meter.stop(sessionId);
+  // meter.stop is async (flushes settlement to Arc testnet)
+  await meter.stop(sessionId);
   const session = db.getSession(sessionId);
+  // Read the latest audit ledger entry for the settlement tx
+  const ledger = tickLedger.recent(1)[0] || {};
   res.json({
     session,
     totalPaidUsd: arc.microToUsd(session?.amount_paid || 0),
+    settlement: ledger.kind === 'settlement' ? {
+      txHash: ledger.settlementTxHash,
+      arcscanUrl: ledger.arcscanUrl,
+      tickCount: ledger.amountMicro / Math.max(1, session?.price_per_sec || 1),
+    } : null,
   });
 });
 

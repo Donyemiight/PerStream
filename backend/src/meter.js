@@ -42,6 +42,9 @@ class Meter {
       }
     }, TICK_INTERVAL_MS);
 
+    // Track consecutive unsettled ticks for batched settlement
+    session._unsettled = 0;
+
     this.timers.set(session.id, timer);
     this.running = this.timers.size > 0;
     console.log(`[meter] started session ${session.id} (track ${session.track_id})`);
@@ -49,16 +52,64 @@ class Meter {
 
   /**
    * Stop the meter for a session. Closes session in DB.
+   * Also flushes any unsettled ticks to Arc testnet (batched settlement).
    */
-  stop(sessionId) {
+  async stop(sessionId) {
     const timer = this.timers.get(sessionId);
     if (timer) {
       clearInterval(timer);
       this.timers.delete(sessionId);
       db.closeSession(sessionId);
+      // Flush any unsettled ticks to the chain
+      await this._flushSettlement(sessionId);
       console.log(`[meter] stopped session ${sessionId}`);
     }
     this.running = this.timers.size > 0;
+  }
+
+  /**
+   * Flush all unsettled ticks for a session to Arc testnet.
+   * This is the REAL on-chain settlement — one USDC transfer per
+   * batched set of ticks from seller's Gateway to creator's wallet.
+   */
+  async _flushSettlement(sessionId) {
+    if (!arc.isLive()) return;
+    try {
+      const session = db.getSession(sessionId);
+      if (!session) return;
+      const track = db.getTrack(session.track_id);
+      const listenerUser = db.getUser(session.listener_id);
+      const creatorUser = db.getUser(session.creator_id);
+      // Aggregate all per-second ticks from the audit ledger for this session
+      const ticks = tickLedger.getBySession(sessionId) || [];
+      const totalAmountMicro = ticks.reduce((s, t) => s + (t.amountMicro || 0), 0);
+      if (totalAmountMicro <= 0) return;
+      const result = await arc.liveBatchedSettle({
+        sessionId,
+        listener: listenerUser ? listenerUser.wallet : session.listener_id,
+        creator: creatorUser ? creatorUser.wallet : session.creator_id,
+        totalAmountMicroUsdc: totalAmountMicro,
+      });
+      if (result.ok && result.settlementTxHash) {
+        // Record the on-chain settlement in the audit ledger
+        tickLedger.appendSettlement({
+          sessionId,
+          trackId: session.track_id,
+          listener: listenerUser ? listenerUser.wallet : session.listener_id,
+          creator: creatorUser ? creatorUser.wallet : session.creator_id,
+          amountMicro: totalAmountMicro,
+          amountUsd: totalAmountMicro / 1_000_000,
+          settlementTxHash: result.settlementTxHash,
+          arcscanUrl: result.arcscanUrl,
+          mode: 'live',
+        });
+        console.log(`[meter] batched settlement: ${ticks.length} ticks → $${(totalAmountMicro/1e6).toFixed(6)} tx=${result.settlementTxHash.slice(0,18)}...`);
+      } else {
+        console.warn(`[meter] batched settlement skipped: ${result.reason}`);
+      }
+    } catch (err) {
+      console.warn('[meter] flushSettlement failed (non-fatal):', err.message);
+    }
   }
 
   /**
@@ -118,6 +169,13 @@ class Meter {
         arcscanUrl: result.arcscanUrl || null,
         mode: arc.MODE,
       });
+      // Track unsettled ticks for batched settlement
+      session._unsettled = (session._unsettled || 0) + 1;
+      // Every 30 ticks (30 seconds of streaming), flush to Arc testnet
+      if (arc.isLive() && session._unsettled >= 30) {
+        session._unsettled = 0;
+        await this._flushSettlement(fresh.id);
+      }
     } else {
       // Listener ran out of deposit — stop the meter gracefully
       console.log(`[meter] session ${fresh.id}: ${result.reason}, stopping`);

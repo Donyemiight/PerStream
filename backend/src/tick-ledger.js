@@ -125,9 +125,37 @@ function clear() {
   inMemory = [];
 }
 
+function getBySession(sessionId) {
+  // Return all ticks for a given session (used by batched settlement)
+  return inMemory.filter(e => e.sessionId === sessionId);
+}
+
+function appendSettlement(entry) {
+  // Append a batched-settlement entry (distinct from per-second ticks).
+  // This is the REAL on-chain settlement tx for the batch of ticks.
+  const record = {
+    kind: 'settlement',
+    ts: new Date().toISOString(),
+    ...entry,
+  };
+  inMemory.push(record);
+  if (inMemory.length > MAX_ENTRIES_IN_MEMORY) {
+    inMemory = inMemory.slice(-MAX_ENTRIES_IN_MEMORY);
+  }
+  ensureDir();
+  try {
+    fs.appendFileSync(LEDGER_PATH, JSON.stringify(record) + '\n');
+  } catch (err) {
+    console.warn('[ledger] write failed:', err.message);
+  }
+  return record;
+}
+
 module.exports = {
   append,
+  appendSettlement,
   recent,
+  getBySession,
   stats,
   streamAll,
   clear,
