@@ -64,6 +64,21 @@ db.ready().catch(err => {
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`;
+
+// When running behind a tunnel (Cloudflare), the request's Host header tells us
+// the public URL. We respect that for absolute URLs returned to the client so
+// audio loads work correctly from any device.
+function getRequestBaseUrl(req) {
+  if (process.env.PUBLIC_BASE_URL) return process.env.PUBLIC_BASE_URL;
+  if (req && req.headers && req.headers.host) {
+    const host = req.headers.host;
+    if (!host.startsWith('localhost') && !host.startsWith('127.') && !host.match(/^\d+\.\d+\.\d+\.\d+/)) {
+      const proto = req.headers['x-forwarded-proto'] || 'https';
+      return `${proto}://${host}`;
+    }
+  }
+  return `http://localhost:${PORT}`;
+}
 const AUDIO_DIR = process.env.AUDIO_DIR || path.join(__dirname, '..', 'data', 'audio');
 const MAX_AUDIO_BYTES = parseInt(process.env.MAX_AUDIO_BYTES || '52428800', 10);
 
@@ -196,7 +211,7 @@ app.get('/api/tracks/:id', (req, res) => {
   res.json({
     track: {
       ...track,
-      audio_url: makeAbsoluteUrl(track.audio_url),
+      audio_url: makeAbsoluteUrl(track.audio_url, req),
       creator: creator ? { id: creator.id, handle: creator.handle, wallet: creator.wallet } : null,
     },
   });
@@ -271,7 +286,7 @@ app.get('/api/tracks/:id/stream', optionalAuth, (req, res) => {
   res.json({
     ok: true,
     trackId: track.id,
-    audioUrl: makeAbsoluteUrl(track.audio_url),
+    audioUrl: makeAbsoluteUrl(track.audio_url, req),
     pricePerSec: track.price_per_sec,
     durationSec: track.duration_sec,
   });
@@ -559,10 +574,10 @@ app.get('/api/audit/export', (req, res) => {
 // Helpers
 // ───────────────────────────────────────────────
 
-function makeAbsoluteUrl(urlOrPath) {
+function makeAbsoluteUrl(urlOrPath, req) {
   if (!urlOrPath) return urlOrPath;
   if (urlOrPath.startsWith('http')) return urlOrPath;
-  return `${PUBLIC_BASE_URL}${urlOrPath}`;
+  return `${getRequestBaseUrl(req)}${urlOrPath}`;
 }
 
 // ───────────────────────────────────────────────

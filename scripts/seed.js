@@ -79,25 +79,36 @@ if (!listener) {
 // ─── Seed sample tracks ───
 const tracks = [
   {
+    title: 'Ep. 1: The Cold-Start Cliff — why per-second beats subscriptions',
+    description: 'A full 4-minute 16-second podcast episode. How subscription media kills 90% of new shows, and how a per-second model flips the economics. Press play and let the meter run.',
+    pricePerSec: 100, // 0.0001 USDC/sec = $0.006/min — very cheap!
+    durationSec: 256,
+    filename: 'podcast-full.mp3',
+    audioUrlOverride: '/assets/podcast-full.mp3',
+  },
+  {
     title: 'PerStream Theme — Welcome to paid seconds',
-    description: 'A 30-second welcome message. Use this to test per-second pricing.',
+    description: 'A 26-second welcome message. Hear why per-second payments change everything for creators and listeners.',
     pricePerSec: 300, // 0.0003 USDC
-    durationSec: 30,
-    filename: 'track-1-welcome.mp3',
+    durationSec: 26,
+    filename: 'welcome.mp3',
+    audioUrlOverride: '/assets/welcome.mp3',
   },
   {
-    title: 'The Cold-Start Cliff — PerStream pitch audio',
-    description: '60-second pitch explaining why per-second beats subscriptions.',
+    title: 'Pitch: why pay per second?',
+    description: 'A 25-second pitch explaining why your balance should only tick while audio plays.',
     pricePerSec: 500, // 0.0005 USDC
-    durationSec: 60,
-    filename: 'track-2-pitch.mp3',
+    durationSec: 25,
+    filename: 'pitch.mp3',
+    audioUrlOverride: '/assets/pitch.mp3',
   },
   {
-    title: 'Demo Loop — looping tone for testing',
-    description: 'A short test track. Loop it to see continuous per-second tick.',
+    title: 'Demo Loop — 17-second spoken test track',
+    description: 'Press play, watch the meter tick, pause to stop. The whole point of PerStream in 17 seconds.',
     pricePerSec: 100, // 0.0001 USDC (cheap!)
-    durationSec: 15,
-    filename: 'track-3-loop.mp3',
+    durationSec: 17,
+    filename: 'loop.mp3',
+    audioUrlOverride: '/assets/loop.mp3',
   },
 ];
 
@@ -124,7 +135,7 @@ for (const t of tracks) {
       creatorId: creator.id,
       title: t.title,
       description: t.description,
-      audioUrl: `/api/tracks/audio/${t.filename}`,
+      audioUrl: t.audioUrlOverride || `/api/tracks/audio/${t.filename}`,
       durationSec: t.durationSec,
       pricePerSec: t.pricePerSec,
     });
