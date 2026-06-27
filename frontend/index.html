@@ -38,7 +38,7 @@
       </div>
 
       <div class="hero-meta">
-        <span class="dot"></span> Live on Arc testnet · Mock mode for instant demo
+        <span class="dot"></span> <span id="mode-indicator">Checking mode…</span>
       </div>
     </div>
 
@@ -111,6 +111,18 @@
       value += 0.0003;
       counter.textContent = value.toFixed(4);
     }, 1000);
+
+    // Show the current mode (live vs mock) on the landing page
+    fetch('api/audit/stats').then(r => r.json()).then(d => {
+      const el = document.getElementById('mode-indicator');
+      if (d.mode === 'live') {
+        el.innerHTML = '🟢 LIVE on Arc testnet · <a href="' + (d.sellerAddress ? 'https://testnet.arcscan.app/address/' + d.sellerAddress : '#') + '" target="_blank">view on Arcscan</a>';
+      } else {
+        el.innerHTML = '🟡 Mock mode (instant demo) · <a href="LIVE_SETUP.html">Switch to live Arc testnet</a>';
+      }
+    }).catch(() => {
+      document.getElementById('mode-indicator').textContent = 'Offline';
+    });
   </script>
 </body>
 </html>

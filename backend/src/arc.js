@@ -222,7 +222,21 @@ async function getCreatorEarnings(creator) {
 
 // Live-mode helper for server to query
 function isLive() { return MODE === 'live'; }
-function getSellerAddress() { return _liveSellerAddress; }
+function getSellerAddress() {
+  // Return the live seller address if we've initialized the live client
+  if (_liveSellerAddress) return _liveSellerAddress;
+  // Otherwise, derive it from the configured private key so the UI can
+  // show the address to users (so they can fund it via the faucet).
+  const pk = process.env.SETTLEMENT_PRIVATE_KEY;
+  if (!pk) return null;
+  try {
+    const { privateKeyToAccount } = require('viem/accounts');
+    const account = privateKeyToAccount(pk);
+    return account.address;
+  } catch {
+    return null;
+  }
+}
 
 function usdToMicro(amount) { return microUsdc(amount); }
 function microToUsd(amount) { return fromMicroUsdc(amount); }
