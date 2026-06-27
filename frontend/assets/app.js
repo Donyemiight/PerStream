@@ -281,31 +281,65 @@ const PerStream = (() => {
         promptLogin();
         return;
       }
-      const url = API_BASE + '/api/listen/deposit';
-      console.log('[deposit] POST ' + url);
-      const r = await authedFetch('/api/listen/deposit', {
+      // Show a toast immediately so the user knows the deposit is in progress
+      showToast(`Depositing $${amountUsd} USDC…`, 'info');
+      // Use raw fetch instead of authedFetch, with currentUser.id directly.
+      let r = await fetch(API_BASE + '/api/listen/deposit', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': currentUser.id,
+        },
         body: JSON.stringify({ amountUsd }),
       });
       console.log('[deposit] response status=' + r.status);
+      // If the user ID is stale (DB was wiped), recover by logging in again
+      if (r.status === 401) {
+        console.log('[deposit] stale user ID, re-logging in...');
+        showToast('Reconnecting to wallet...', 'info');
+        const newLogin = await fetch(API_BASE + '/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: currentUser.email }),
+        });
+        if (newLogin.ok) {
+          const newData = await newLogin.json();
+          saveUser(newData.user);
+          // Retry deposit with new user ID
+          r = await fetch(API_BASE + '/api/listen/deposit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-User-Id': newData.user.id,
+            },
+            body: JSON.stringify({ amountUsd }),
+          });
+        }
+      }
       const data = await r.json();
       console.log('[deposit] response body=' + JSON.stringify(data));
       if (!data.ok) {
+        showToast(`Deposit failed: ${data.reason || 'unknown error'}`, 'error');
         showError(data.reason || 'deposit_failed');
         return;
       }
       const balanceMicro = data.balance;
-      // Update balance display (multiple places for safety)
+      // Update balance display — find ANY element that has 'balance' in its id or shows USDC
       const balanceEl = document.getElementById('stat-balance');
-      if (balanceEl) balanceEl.textContent = formatUsdc(balanceMicro);
-      // Also update any other balance displays
-      const allBalanceEls = document.querySelectorAll('[id*="balance"], [class*="balance"]');
-      allBalanceEls.forEach(el => {
-        if (el.id !== 'stat-balance' && el.textContent && el.textContent.match(/^\d+\.\d+ USDC$/)) {
+      if (balanceEl) {
+        balanceEl.textContent = formatUsdc(balanceMicro) + ' USDC';
+        balanceEl.style.color = '#4ade80';  // green flash
+        setTimeout(() => { balanceEl.style.color = ''; }, 1500);
+      }
+      // Also force update any text matching "X.XXXXXX USDC" in case ID changed
+      document.querySelectorAll('.stat-value, .stat, [class*="balance"]').forEach(el => {
+        if (el.children.length === 0 && el.textContent && el.textContent.match(/^\d+\.\d+\s*USDC$/i)) {
           el.textContent = formatUsdc(balanceMicro) + ' USDC';
         }
       });
-      // Flash success
+      // Show a big green toast for success
+      showToast(`+ $${amountUsd} USDC deposited · balance $${formatUsdc(balanceMicro)}`, 'success');
+      // Flash success in status too
       const status = document.getElementById('stat-status');
       const prev = status ? status.textContent : '';
       if (status) {
@@ -322,8 +356,34 @@ const PerStream = (() => {
       }
     } catch (err) {
       console.error('[deposit] error:', err);
+      showToast(`Deposit error: ${err.message}`, 'error');
       showError(`Deposit failed: ${err.message}`);
     }
+  }
+
+  // Toast notifications — hard to miss, even on mobile
+  function showToast(message, type = 'info') {
+    let toast = document.getElementById('perstream-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'perstream-toast';
+      toast.style.cssText = 'position:fixed; top:80px; left:50%; transform:translateX(-50%); padding:12px 20px; border-radius:8px; font-weight:600; z-index:9999; max-width:90%; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.3); transition: opacity 0.3s; font-family: system-ui, -apple-system, sans-serif;';
+      document.body.appendChild(toast);
+    }
+    const colors = {
+      info: { bg: '#3b82f6', fg: '#fff' },      // blue
+      success: { bg: '#10b981', fg: '#fff' },   // green
+      error: { bg: '#ef4444', fg: '#fff' },     // red
+    };
+    const c = colors[type] || colors.info;
+    toast.style.background = c.bg;
+    toast.style.color = c.fg;
+    toast.textContent = message;
+    toast.style.opacity = '1';
+    // Auto-dismiss after 3s, but keep errors longer
+    const duration = type === 'error' ? 5000 : 3000;
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => { toast.style.opacity = '0'; }, duration);
   }
 
   function startPolling(sessionId) {
