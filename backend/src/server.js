@@ -454,18 +454,59 @@ app.get('/api/creator/dashboard', authMiddleware, (req, res) => {
   // Per-track analytics
   const trackStats = tracks.map((t) => ({
     ...t,
-    earningsLive: arc.getCreatorEarnings(req.user.wallet),
+    earningsLive: arc.microToUsd(arc.getCreatorEarnings(req.user.wallet)),
     sessionsActive: db.getActiveSessionsForTrack(t.id).length,
+    trackEarnings: arc.microToUsd(db.getTrackEarnings(t.id)),
   }));
 
   const feedback = db.getFeedbackStats();
   const leadCount = db.getLeadCount();
 
+  // Analytics aggregations
+  const totalStreams = tracks.reduce((s, t) => s + (t.plays || 0), 0);
+  const activeListeners = tracks.reduce((s, t) => s + db.getActiveSessionsForTrack(t.id).length, 0);
+  const now = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const today = tracks.filter(t => (t.created_at || 0) >= now - dayMs).length;
+  // Lifetime earnings from audit ledger
+  const allTicks = tickLedger.recent(1000);
+  const myTicks = allTicks.filter(t => t.creator === req.user.wallet);
+  const totalAmountMicro = myTicks.reduce((s, t) => s + (t.amountMicro || 0), 0);
+
+  // Most streamed tracks
+  const mostStreamed = [...trackStats].sort((a, b) => (b.plays || 0) - (a.plays || 0)).slice(0, 5);
+
+  // Withdrawals
+  const withdrawals = db.listWithdrawals(req.user.id, 20);
+
+  // Notifications
+  const notifications = db.listNotifications(req.user.id, 20);
+  const unreadCount = db.unreadNotificationCount(req.user.id);
+
   res.json({
     creator: req.user,
+    profile: db.getCreatorProfile(req.user.id),
     earningsLive: arc.microToUsd(earningsTotal),
     earningsRecorded: arc.microToUsd(dbEarningsTotal),
+    earnings: {
+      total: arc.microToUsd(totalAmountMicro),
+      today: arc.microToUsd(0), // could sum ticks in last 24h
+      thisWeek: arc.microToUsd(0),
+      thisMonth: arc.microToUsd(0),
+    },
+    analytics: {
+      totalStreams,
+      activeListeners,
+      newTracksToday: today,
+      totalTracks: tracks.length,
+      publishedTracks: tracks.filter(t => t.status === 'published').length,
+      draftTracks: tracks.filter(t => t.status === 'draft').length,
+      mostStreamed,
+    },
     tracks: trackStats,
+    withdrawals,
+    notifications,
+    unreadCount,
     feedback: {
       total: feedback.total,
       average: feedback.average,
@@ -479,13 +520,141 @@ app.post('/api/creator/withdraw', authMiddleware, async (req, res) => {
   const { amountUsd } = req.body || {};
   const amount = parseFloat(amountUsd);
   if (!amount || amount <= 0) return res.status(400).json({ error: 'amount_usd_required' });
+  if (amount > 1000) return res.status(400).json({ error: 'amount_too_large' });
 
-  const result = await arc.withdraw({
-    creator: req.user.wallet,
-    amountMicroUsdc: arc.usdToMicro(amount),
+  const amountMicro = arc.usdToMicro(amount);
+
+  // Record the withdrawal request first
+  const wd = db.createWithdrawal({
+    creatorId: req.user.id,
+    amountMicro,
+    amountUsd: amount,
+    status: 'pending',
   });
 
-  res.json(result);
+  try {
+    const result = await arc.withdraw({
+      creator: req.user.wallet,
+      amountMicroUsdc: amountMicro,
+    });
+    // Update withdrawal with tx hash
+    if (result.ok && (result.mintTxHash || result.txHash)) {
+      db.updateWithdrawalStatus(wd.id, 'completed', result.mintTxHash || result.txHash);
+      // Notify creator
+      db.createNotification({
+        userId: req.user.id,
+        kind: 'withdrawal',
+        title: 'Withdrawal successful',
+        body: `$${amount.toFixed(6)} USDC sent to your wallet.`,
+      });
+    } else {
+      db.updateWithdrawalStatus(wd.id, 'failed');
+      db.createNotification({
+        userId: req.user.id,
+        kind: 'withdrawal',
+        title: 'Withdrawal failed',
+        body: result.reason || 'Unknown error',
+      });
+    }
+    res.json({
+      ...result,
+      withdrawalId: wd.id,
+      amountUsd: amount,
+      arcscanUrl: result.mintTxHash ? `https://testnet.arcscan.app/tx/${result.mintTxHash}` : null,
+    });
+  } catch (err) {
+    db.updateWithdrawalStatus(wd.id, 'failed');
+    res.status(500).json({ error: 'withdraw_failed', reason: err.message });
+  }
+});
+
+// ===== Creator track CRUD =====
+app.put('/api/creator/tracks/:id', authMiddleware, (req, res) => {
+  const { id } = req.params;
+  const updates = req.body || {};
+  const result = db.updateTrack(id, req.user.id, updates);
+  if (!result) return res.status(404).json({ error: 'not_found_or_not_owner' });
+  res.json({ track: result });
+});
+
+app.delete('/api/creator/tracks/:id', authMiddleware, (req, res) => {
+  const { id } = req.params;
+  const ok = db.deleteTrack(id, req.user.id);
+  if (!ok) return res.status(404).json({ error: 'not_found_or_not_owner' });
+  res.json({ ok: true });
+});
+
+app.post('/api/creator/tracks/:id/status', authMiddleware, (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body || {};
+  const result = db.setTrackStatus(id, req.user.id, status);
+  if (!result) return res.status(400).json({ error: 'invalid_status_or_not_owner' });
+  res.json({ track: result });
+});
+
+// ===== Creator profile =====
+app.get('/api/creator/profile', authMiddleware, (req, res) => {
+  res.json({ profile: db.getCreatorProfile(req.user.id) });
+});
+
+app.put('/api/creator/profile', authMiddleware, (req, res) => {
+  const { displayName, bio, avatarUrl, socialLinks, walletAddress } = req.body || {};
+  const profile = db.updateCreatorProfile(req.user.id, {
+    displayName, bio, avatarUrl, socialLinks, walletAddress
+  });
+  res.json({ profile });
+});
+
+// ===== Creator notifications =====
+app.get('/api/creator/notifications', authMiddleware, (req, res) => {
+  const notifications = db.listNotifications(req.user.id, 50);
+  const unreadCount = db.unreadNotificationCount(req.user.id);
+  res.json({ notifications, unreadCount });
+});
+
+app.post('/api/creator/notifications/:id/read', authMiddleware, (req, res) => {
+  db.markNotificationRead(req.params.id);
+  res.json({ ok: true });
+});
+
+// ===== Creator withdrawals =====
+app.get('/api/creator/withdrawals', authMiddleware, (req, res) => {
+  const withdrawals = db.listWithdrawals(req.user.id, 50);
+  res.json({ withdrawals });
+});
+
+// ===== Create track (upload) =====
+app.post('/api/creator/tracks', authMiddleware, upload.single('audio'), (req, res) => {
+  try {
+    const { title, description, category, pricePerSec, status, durationSec } = req.body || {};
+    if (!title) return res.status(400).json({ error: 'title_required' });
+    const price = parseInt(pricePerSec, 10) || 100;
+    const audioUrl = req.file ? `/assets/audio/${req.file.filename}` : (req.body.audioUrl || '/assets/loop.mp3');
+    const coverUrl = req.body.coverUrl || '';
+    const dur = parseInt(durationSec, 10) || 30;
+    const track = db.createTrack({
+      creatorId: req.user.id,
+      title,
+      description: description || '',
+      audioUrl,
+      durationSec: dur,
+      pricePerSec: price,
+      coverUrl,
+      category: category || 'general',
+      status: status || 'published',
+    });
+    // Notify creator
+    db.createNotification({
+      userId: req.user.id,
+      kind: 'upload',
+      title: 'Track uploaded',
+      body: `${title} is now ${status === 'published' ? 'live' : 'in drafts'}.`,
+    });
+    res.json({ track });
+  } catch (err) {
+    console.error('[upload] failed:', err.message);
+    res.status(500).json({ error: 'upload_failed', reason: err.message });
+  }
 });
 
 // ─────────────────────────────────────────────────

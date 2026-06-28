@@ -60,10 +60,46 @@ async function init() {
       duration_sec    INTEGER NOT NULL DEFAULT 0,
       price_per_sec   INTEGER NOT NULL,
       cover_url       TEXT DEFAULT '',
+      category        TEXT DEFAULT 'general',
+      status          TEXT DEFAULT 'published',
       created_at      INTEGER NOT NULL,
+      updated_at      INTEGER NOT NULL DEFAULT 0,
       plays           INTEGER NOT NULL DEFAULT 0,
       earnings_total  INTEGER NOT NULL DEFAULT 0,
       FOREIGN KEY (creator_id) REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS withdrawals (
+      id              TEXT PRIMARY KEY,
+      creator_id      TEXT NOT NULL,
+      amount_micro    INTEGER NOT NULL,
+      amount_usd      REAL NOT NULL,
+      tx_hash         TEXT,
+      status          TEXT DEFAULT 'pending',
+      created_at      INTEGER NOT NULL,
+      FOREIGN KEY (creator_id) REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS creator_profiles (
+      user_id       TEXT PRIMARY KEY,
+      display_name  TEXT,
+      bio           TEXT DEFAULT '',
+      avatar_url    TEXT DEFAULT '',
+      social_links  TEXT DEFAULT '{}',
+      wallet_address TEXT,
+      updated_at    INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS notifications (
+      id              TEXT PRIMARY KEY,
+      user_id         TEXT NOT NULL,
+      kind            TEXT NOT NULL,
+      title           TEXT NOT NULL,
+      body            TEXT DEFAULT '',
+      is_read         INTEGER DEFAULT 0,
+      created_at      INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id)
     );
 
     CREATE TABLE IF NOT EXISTS sessions (
@@ -108,7 +144,29 @@ async function init() {
 
     CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at);
     CREATE INDEX IF NOT EXISTS idx_leads_email ON leads(email);
+
   `);
+
+  // Migrations: ALTER TABLE to add new columns to existing tracks table
+  // (CREATE TABLE IF NOT EXISTS doesn't add columns to existing tables)
+  try {
+    const tracksCols = db.exec(`PRAGMA table_info(tracks)`);
+    const colNames = tracksCols[0] ? tracksCols[0].values.map(v => v[1]) : [];
+    if (!colNames.includes('category')) {
+      db.run(`ALTER TABLE tracks ADD COLUMN category TEXT DEFAULT 'general'`);
+      console.log('[db] migrated: added tracks.category');
+    }
+    if (!colNames.includes('status')) {
+      db.run(`ALTER TABLE tracks ADD COLUMN status TEXT DEFAULT 'published'`);
+      console.log('[db] migrated: added tracks.status');
+    }
+    if (!colNames.includes('updated_at')) {
+      db.run(`ALTER TABLE tracks ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0`);
+      console.log('[db] migrated: added tracks.updated_at');
+    }
+  } catch (err) {
+    console.warn('[db] tracks migration check failed:', err.message);
+  }
 
   persist();
   return db;
@@ -235,6 +293,47 @@ function createTrack({ creatorId, title, description, audioUrl, durationSec, pri
   return getTrack(id);
 }
 
+function updateTrack(id, creatorId, updates) {
+  const existing = getTrack(id);
+  if (!existing) return null;
+  if (existing.creator_id !== creatorId) return null; // ownership check
+  const allowed = ['title', 'description', 'price_per_sec', 'cover_url', 'category', 'duration_sec'];
+  const fields = [];
+  const values = [];
+  for (const k of allowed) {
+    if (updates[k] !== undefined) {
+      fields.push(`${k} = ?`);
+      values.push(updates[k]);
+    }
+  }
+  if (fields.length === 0) return existing;
+  fields.push('updated_at = ?');
+  values.push(Date.now());
+  values.push(id);
+  db.run(`UPDATE tracks SET ${fields.join(', ')} WHERE id = ?`, values);
+  persist();
+  return getTrack(id);
+}
+
+function deleteTrack(id, creatorId) {
+  const existing = getTrack(id);
+  if (!existing) return false;
+  if (existing.creator_id !== creatorId) return false; // ownership check
+  db.run(`DELETE FROM tracks WHERE id = ?`, [id]);
+  persist();
+  return true;
+}
+
+function setTrackStatus(id, creatorId, status) {
+  const existing = getTrack(id);
+  if (!existing) return null;
+  if (existing.creator_id !== creatorId) return null;
+  if (!['published', 'draft', 'unlisted'].includes(status)) return null;
+  db.run(`UPDATE tracks SET status = ?, updated_at = ? WHERE id = ?`, [status, Date.now(), id]);
+  persist();
+  return getTrack(id);
+}
+
 function getTrack(id) {
   const stmt = db.prepare(`SELECT * FROM tracks WHERE id = ?`);
   stmt.bind([id]);
@@ -320,6 +419,108 @@ function getTrackEarnings(trackId) {
   stmt.bind([trackId]);
   const row = firstRow(stmt);
   return row ? row.total : 0;
+}
+
+// ====== WITHDRAWALS ======
+function createWithdrawal({ creatorId, amountMicro, amountUsd, txHash = null, status = 'pending' }) {
+  const id = `wdl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const now = Date.now();
+  db.run(
+    `INSERT INTO withdrawals (id, creator_id, amount_micro, amount_usd, tx_hash, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [id, creatorId, amountMicro, amountUsd, txHash, status, now]
+  );
+  persist();
+  return getWithdrawal(id);
+}
+
+function getWithdrawal(id) {
+  const stmt = db.prepare(`SELECT * FROM withdrawals WHERE id = ?`);
+  stmt.bind([id]);
+  return firstRow(stmt);
+}
+
+function listWithdrawals(creatorId, limit = 50) {
+  const stmt = db.prepare(`SELECT * FROM withdrawals WHERE creator_id = ? ORDER BY created_at DESC LIMIT ?`);
+  stmt.bind([creatorId, limit]);
+  return rowsFromStmt(stmt);
+}
+
+function updateWithdrawalStatus(id, status, txHash = null) {
+  db.run(`UPDATE withdrawals SET status = ?, tx_hash = COALESCE(?, tx_hash) WHERE id = ?`, [status, txHash, id]);
+  persist();
+  return getWithdrawal(id);
+}
+
+// ====== NOTIFICATIONS ======
+function createNotification({ userId, kind, title, body = '' }) {
+  const id = `ntf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const now = Date.now();
+  db.run(
+    `INSERT INTO notifications (id, user_id, kind, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+    [id, userId, kind, title, body, now]
+  );
+  persist();
+  return getNotification(id);
+}
+
+function getNotification(id) {
+  const stmt = db.prepare(`SELECT * FROM notifications WHERE id = ?`);
+  stmt.bind([id]);
+  return firstRow(stmt);
+}
+
+function listNotifications(userId, limit = 50) {
+  const stmt = db.prepare(`SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`);
+  stmt.bind([userId, limit]);
+  return rowsFromStmt(stmt);
+}
+
+function markNotificationRead(id) {
+  db.run(`UPDATE notifications SET is_read = 1 WHERE id = ?`, [id]);
+  persist();
+}
+
+function unreadNotificationCount(userId) {
+  const stmt = db.prepare(`SELECT COUNT(*) as c FROM notifications WHERE user_id = ? AND is_read = 0`);
+  stmt.bind([userId]);
+  return firstRow(stmt)?.c || 0;
+}
+
+// ====== CREATOR PROFILES ======
+function updateCreatorProfile(userId, { displayName, bio, avatarUrl, socialLinks, walletAddress }) {
+  const now = Date.now();
+  const linksJson = JSON.stringify(socialLinks || {});
+  db.run(
+    `INSERT INTO creator_profiles (user_id, display_name, bio, avatar_url, social_links, wallet_address, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(user_id) DO UPDATE SET
+       display_name = excluded.display_name,
+       bio = excluded.bio,
+       avatar_url = excluded.avatar_url,
+       social_links = excluded.social_links,
+       wallet_address = excluded.wallet_address,
+       updated_at = excluded.updated_at`,
+    [userId, displayName || null, bio || '', avatarUrl || '', linksJson, walletAddress || null, now]
+  );
+  persist();
+  return getCreatorProfile(userId);
+}
+
+function getCreatorProfile(userId) {
+  const stmt = db.prepare(`
+    SELECT u.id, u.handle, u.email, u.wallet, u.role, u.created_at,
+           p.display_name, p.bio, p.avatar_url, p.social_links, p.wallet_address, p.updated_at as profile_updated_at
+    FROM users u
+    LEFT JOIN creator_profiles p ON p.user_id = u.id
+    WHERE u.id = ?
+  `);
+  stmt.bind([userId]);
+  const row = firstRow(stmt);
+  if (!row) return null;
+  if (row.social_links) {
+    try { row.social_links = JSON.parse(row.social_links); } catch { row.social_links = {}; }
+  }
+  return row;
 }
 
 
@@ -431,6 +632,9 @@ module.exports = {
   getUserByWallet,
   // track
   createTrack,
+  updateTrack,
+  deleteTrack,
+  setTrackStatus,
   getTrack,
   listTracks,
   incrementTrackStats,
@@ -444,6 +648,20 @@ module.exports = {
   getCreatorEarnings,
   getTrackEarnings,
   getTopTracks,
+  // withdrawals
+  createWithdrawal,
+  getWithdrawal,
+  listWithdrawals,
+  updateWithdrawalStatus,
+  // notifications
+  createNotification,
+  getNotification,
+  listNotifications,
+  markNotificationRead,
+  unreadNotificationCount,
+  // creator profile
+  updateCreatorProfile,
+  getCreatorProfile,
   // feedback
   addFeedback,
   getFeedbackStats,

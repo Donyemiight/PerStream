@@ -35,7 +35,7 @@
       badge.textContent = '⚡ DEMO MODE (no live backend)';
       badge.style.cssText = 'position:fixed; bottom:12px; left:12px; background:#fbbf24; color:#0a0a0f; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:700; z-index:9998; font-family:system-ui; box-shadow:0 2px 8px rgba(0,0,0,0.3); cursor:pointer;';
       badge.title = 'Click to switch to LIVE mode';
-      badge.onclick = () => { window.location.href = 'https://universities-analyzed-projection-decades.trycloudflare.com' + window.location.pathname; };
+      badge.onclick = () => { window.location.href = 'https://approaches-browsers-pci-merry.trycloudflare.com' + window.location.pathname; };
       document.body.appendChild(badge);
     });
   } else {
@@ -192,6 +192,74 @@
     }
 
     // GET /api/creator/dashboard
+    // POST /api/creator/tracks — create track
+    if (method === 'POST' && path === '/api/creator/tracks') {
+      const body = JSON.parse(opts.body || '{}');
+      const newTrack = {
+        id: 'trk_demo_' + Date.now(),
+        creator_id: state.currentUser ? state.currentUser.id : 'demo-creator',
+        title: body.title || 'New Track',
+        description: body.description || '',
+        audio_url: body.audioUrl || '/assets/loop.mp3',
+        duration_sec: parseInt(body.durationSec, 10) || 60,
+        price_per_sec: parseInt(body.pricePerSec, 10) || 100,
+        cover_url: body.coverUrl || '',
+        category: body.category || 'general',
+        status: body.status || 'published',
+        created_at: Date.now(),
+        plays: 0,
+        earnings_total: 0,
+      };
+      DEMO_TRACKS.unshift(newTrack);
+      return json({ track: newTrack });
+    }
+    // PUT /api/creator/tracks/:id — update track
+    if (method === 'PUT' && path.match(/^\/api\/creator\/tracks\/[^/]+$/)) {
+      const id = path.split('/').pop();
+      const body = JSON.parse(opts.body || '{}');
+      const t = DEMO_TRACKS.find(x => x.id === id);
+      if (!t) return json({ error: 'not_found' }, 404);
+      Object.assign(t, body);
+      return json({ track: t });
+    }
+    // DELETE /api/creator/tracks/:id — delete track
+    if (method === 'DELETE' && path.match(/^\/api\/creator\/tracks\/[^/]+$/)) {
+      const id = path.split('/').pop();
+      const idx = DEMO_TRACKS.findIndex(x => x.id === id);
+      if (idx === -1) return json({ error: 'not_found' }, 404);
+      DEMO_TRACKS.splice(idx, 1);
+      return json({ ok: true });
+    }
+    // POST /api/creator/tracks/:id/status — publish/unpublish
+    if (method === 'POST' && path.match(/^\/api\/creator\/tracks\/[^/]+\/status$/)) {
+      const id = path.split('/')[4];
+      const body = JSON.parse(opts.body || '{}');
+      const t = DEMO_TRACKS.find(x => x.id === id);
+      if (!t) return json({ error: 'not_found' }, 404);
+      t.status = body.status || 'published';
+      return json({ track: t });
+    }
+    // GET /api/creator/profile
+    if (method === 'GET' && path === '/api/creator/profile') {
+      return json({ profile: { id: 'demo', handle: 'demo', display_name: 'Demo Creator', bio: 'Demo mode', avatar_url: '', social_links: {} } });
+    }
+    // PUT /api/creator/profile
+    if (method === 'PUT' && path === '/api/creator/profile') {
+      const body = JSON.parse(opts.body || '{}');
+      return json({ profile: { id: 'demo', handle: 'demo', ...body } });
+    }
+    // GET /api/creator/notifications
+    if (method === 'GET' && path === '/api/creator/notifications') {
+      return json({ notifications: state.notifications || [], unreadCount: 0 });
+    }
+    // POST /api/creator/notifications/:id/read
+    if (method === 'POST' && path.match(/^\/api\/creator\/notifications\/[^/]+\/read$/)) {
+      return json({ ok: true });
+    }
+    // GET /api/creator/withdrawals
+    if (method === 'GET' && path === '/api/creator/withdrawals') {
+      return json({ withdrawals: state.withdrawals || [] });
+    }
     if (method === 'GET' && path === '/api/creator/dashboard') {
       return json({
         creator: state.currentUser,
