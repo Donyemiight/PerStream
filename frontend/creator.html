@@ -6,7 +6,7 @@
   <title>Creator dashboard — PerStream</title>
   <meta name="description" content="PerStream creator dashboard. Track real-time earnings, view per-second ticks, verify on-chain on Arcscan.">
   <link rel="icon" type="image/svg+xml" href="assets/prism.svg">
-  <link rel="stylesheet" href="assets/styles.css?v=80">
+  <link rel="stylesheet" href="assets/styles.css?v=85">
 </head>
 <body>
   <!-- Top status bar -->
@@ -116,11 +116,11 @@
     <div class="page-loader-text">Loading dashboard…</div>
   </div>
 
-  <script src="assets/error-overlay.js?v=80"></script>
-  <script src="assets/demo-mode.js?v=80"></script>
-  <script src="assets/feedback-widget.js?v=80"></script>
-  <script src="assets/app.js?v=80"></script>
-  <script src="assets/landing.js?v=80"></script>
+  <script src="assets/error-overlay.js?v=85"></script>
+  <script src="assets/demo-mode.js?v=85"></script>
+  <script src="assets/feedback-widget.js?v=85"></script>
+  <script src="assets/app.js?v=85"></script>
+  <script src="assets/landing.js?v=85"></script>
   <script>
     // Hide page loader once everything is loaded
     window.addEventListener('load', () => {
@@ -130,6 +130,12 @@
         setTimeout(() => loader.remove(), 400);
       }
     });
+    // Initialize the creator dashboard once DOM + scripts are ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => PerStream.initCreatorPage());
+    } else {
+      setTimeout(() => PerStream.initCreatorPage(), 0);
+    }
   </script>
 </body>
 </html>

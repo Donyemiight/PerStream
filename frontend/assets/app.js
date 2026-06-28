@@ -560,15 +560,17 @@ const PerStream = (() => {
 
     if (loginBtn) {
       loginBtn.onclick = async () => {
-        const email = prompt(page === 'creator'
-          ? 'Sign in as creator (any email works):'
-          : 'Sign in to listen (any email works):');
+        const email = await showLoginModal(page);
         if (!email) return;
         try {
+          loginBtn.disabled = true;
+          loginBtn.textContent = '⏳ Signing in…';
           await login(email.trim().toLowerCase());
           location.reload();
         } catch (err) {
-          alert('Login failed: ' + err.message);
+          showToast('Login failed: ' + err.message, 'error');
+          loginBtn.disabled = false;
+          loginBtn.textContent = page === 'creator' ? 'Sign in' : 'Sign in with email';
         }
       };
     }
@@ -605,6 +607,52 @@ const PerStream = (() => {
     return String(s).replace(/[&<>"']/g, c => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
     }[c]));
+  }
+
+  // ─── Login modal (mobile-friendly, no native prompt()) ───
+  function showLoginModal(page) {
+    return new Promise((resolve) => {
+      // Remove any existing modal
+      const existing = document.getElementById('perstream-login-modal');
+      if (existing) existing.remove();
+
+      const isCreator = page === 'creator';
+      const modal = document.createElement('div');
+      modal.id = 'perstream-login-modal';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.2s ease;';
+      modal.innerHTML = `
+        <div style="background:var(--bg-elev,#16161f);border:1px solid var(--border,#25252f);border-radius:20px;padding:32px;max-width:400px;width:100%;box-shadow:0 30px 60px -20px rgba(0,0,0,0.7);">
+          <div style="font-size:1.4em;font-weight:800;margin-bottom:8px;">${isCreator ? 'Sign in as creator' : 'Sign in to listen'}</div>
+          <div style="color:var(--text-dim,#8b8b9a);font-size:0.9em;margin-bottom:20px;">Any email works. We'll create your Arc wallet instantly.</div>
+          <form id="login-form" style="display:flex;flex-direction:column;gap:12px;">
+            <input type="email" id="login-email" placeholder="you@example.com" required autocomplete="email" style="background:var(--bg-card,#16161f);border:1px solid var(--border,#25252f);border-radius:10px;padding:14px 16px;color:var(--text,#e8e8ee);font-size:16px;outline:none;width:100%;box-sizing:border-box;font-family:inherit;" />
+            <button type="submit" id="login-submit" style="background:linear-gradient(135deg,#00d4ff,#ff00aa);color:#0a0a0f;border:none;padding:14px;border-radius:10px;font-weight:700;font-size:16px;cursor:pointer;font-family:inherit;">Sign in</button>
+            <button type="button" id="login-cancel" style="background:transparent;color:var(--text-dim,#8b8b9a);border:1px solid var(--border,#25252f);padding:12px;border-radius:10px;font-weight:500;cursor:pointer;font-family:inherit;">Cancel</button>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      const form = modal.querySelector('#login-form');
+      const input = modal.querySelector('#login-email');
+      const cancelBtn = modal.querySelector('#login-cancel');
+
+      // Auto-focus the input on mobile (iOS may need explicit click too)
+      setTimeout(() => { try { input.focus(); } catch {} }, 100);
+
+      form.onsubmit = (e) => {
+        e.preventDefault();
+        const email = input.value.trim();
+        if (!email) return;
+        modal.remove();
+        resolve(email);
+      };
+      cancelBtn.onclick = () => { modal.remove(); resolve(null); };
+      modal.onclick = (e) => { if (e.target === modal) { modal.remove(); resolve(null); } };
+      // ESC to cancel
+      const escHandler = (e) => { if (e.key === 'Escape') { modal.remove(); resolve(null); document.removeEventListener('keydown', escHandler); } };
+      document.addEventListener('keydown', escHandler);
+    });
   }
 
   function promptLogin() {
