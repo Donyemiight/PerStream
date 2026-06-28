@@ -139,7 +139,7 @@ class ListenerAgent {
     db.closeSession(session.id);
 
     const totalPaidUsd = arc.microToUsd(track.price_per_sec * secondsPlayed);
-    const remainingBalance = arc.getListenerBalance(this.user.wallet);
+    const remainingBalance = await arc.getListenerBalance(this.user.wallet);
     this.log(`✅ Session complete: ${secondsPlayed}s, $${totalPaidUsd.toFixed(6)} paid, $${arc.microToUsd(remainingBalance).toFixed(6)} remaining`);
 
     return {
