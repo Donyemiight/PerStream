@@ -3,126 +3,282 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PerStream — Every second, paid.</title>
-  <meta name="description" content="Per-second USDC streaming paywall for podcasts, built on Circle Nanopayments + Arc.">
+  <title>PerStream — Pay per second. Listen. Win.</title>
+  <meta name="description" content="A per-second USDC streaming paywall for podcasts and long-form audio. Built for the Lepton Agents Hackathon on Circle Arc.">
   <link rel="icon" type="image/svg+xml" href="assets/prism.svg">
-  <link rel="stylesheet" href="assets/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/styles.css?v=50">
 </head>
-<body>
-  <nav class="nav">
+<body class="landing">
+  <!-- Top status bar -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <span class="topbar-dot"></span>
+      <span id="topbar-text">Connecting to Arc testnet…</span>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="nav nav-premium">
     <a href="/" class="logo">
-      <img src="assets/prism.svg" alt="" width="28" height="28">
-      <span>PerStream</span>
+      <img src="assets/prism.svg" alt="" width="36" height="36">
+      <span class="logo-text">PerStream</span>
     </a>
     <div class="nav-links">
       <a href="listen.html">Listen</a>
       <a href="creator.html">For creators</a>
-      <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener">
+        GitHub ↗
+      </a>
     </div>
   </nav>
 
-  <main class="hero">
-    <div class="hero-inner">
-      <h1 class="hero-title">
-        Every second,<br>
-        <span class="hero-accent">paid.</span>
+  <!-- HERO -->
+  <section class="hero-premium">
+    <div class="hero-premium-bg"></div>
+    <div class="hero-premium-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        Built for Lepton Agents Hackathon · Track RFB 4
+      </div>
+
+      <h1 class="hero-title-premium">
+        Pay <span class="hero-accent-premium">per second.</span><br>
+        Listen <span class="hero-accent-premium">on demand.</span>
       </h1>
-      <p class="hero-sub">
-        A per-second USDC streaming paywall for podcasts and long-form audio,
-        built on <strong>Circle Nanopayments</strong> + <strong>Arc</strong>.
+
+      <p class="hero-sub-premium">
+        PerStream is a per-second USDC streaming paywall for podcasts.
+        No subscriptions. No ads. Just pay for the seconds you hear.
       </p>
 
-      <div class="hero-cta">
-        <a href="listen.html" class="btn btn-primary">Try the demo</a>
-        <a href="creator.html" class="btn btn-ghost">Become a creator</a>
+      <div class="hero-cta-premium">
+        <a href="listen.html" class="btn btn-primary btn-xl">
+          ▶ Try the live demo
+        </a>
+        <a href="#how-it-works" class="btn btn-ghost btn-xl">
+          How it works ↓
+        </a>
       </div>
 
-      <div class="hero-meta">
-        <span class="dot"></span> <span id="mode-indicator">Checking mode…</span>
-      </div>
-    </div>
-
-    <div class="hero-visual">
-      <div class="prism-card">
-        <img src="assets/prism.svg" alt="" class="prism-art">
-        <div class="counter">
-          <div class="counter-label">USDC tick</div>
-          <div class="counter-value" id="demo-counter">0.0000</div>
-          <div class="counter-sub">per second · settled on Arc</div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-num" id="stat-ticks">427</div>
+          <div class="hero-stat-label">Ticks streamed</div>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <div class="hero-stat-num" id="stat-paid">$0.0638</div>
+          <div class="hero-stat-label">USDC streamed</div>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <div class="hero-stat-num" id="stat-tx">12</div>
+          <div class="hero-stat-label">On-chain txs</div>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <div class="hero-stat-num" id="stat-tracks">4</div>
+          <div class="hero-stat-label">Episodes live</div>
         </div>
       </div>
     </div>
-  </main>
 
-  <section class="how">
-    <h2>How it works</h2>
-    <div class="how-grid">
-      <div class="how-card">
-        <div class="how-num">01</div>
-        <h3>Creator uploads</h3>
-        <p>Drop an MP3, set a price per second. Default 0.0003 USDC ≈ $1.08/hr.</p>
+    <!-- Live ticking visual -->
+    <div class="hero-visual-premium">
+      <div class="ticker-card">
+        <div class="ticker-header">
+          <span class="ticker-dot"></span>
+          <span>PerStream · Live meter</span>
+        </div>
+        <div class="ticker-now-playing">Cold-Start Cliff — full episode</div>
+        <div class="ticker-amount" id="ticker-amount">0.0638 USDC</div>
+        <div class="ticker-bar">
+          <div class="ticker-bar-fill" id="ticker-bar"></div>
+        </div>
+        <div class="ticker-meta">
+          <span>Balance: <strong id="ticker-balance">$4.94</strong></span>
+          <span>Rate: <strong>$0.0001/sec</strong></span>
+          <span>Tick: <strong id="ticker-tick">213</strong></span>
+        </div>
       </div>
-      <div class="how-card">
-        <div class="how-num">02</div>
-        <h3>Listener signs in</h3>
-        <p>One-click email login. No MetaMask, no seed phrase. Embedded wallet via Circle Agent Stack.</p>
+    </div>
+  </section>
+
+  <!-- WHY -->
+  <section class="why">
+    <div class="why-grid">
+      <div class="why-card">
+        <div class="why-icon">⚡</div>
+        <h3>Real-time settlement</h3>
+        <p>Every second settles on Arc via Circle Gateway. No batched payouts, no waiting.</p>
       </div>
-      <div class="how-card">
-        <div class="how-num">03</div>
+      <div class="why-card">
+        <div class="why-icon">🎙️</div>
+        <h3>For independent creators</h3>
+        <p>From listener #1. No minimum audience. No platform cut beyond gas.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">🔐</div>
+        <h3>No wallet needed</h3>
+        <p>One-click email login. Embedded wallet via Circle Agent Stack. No seed phrases.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">📺</div>
+        <h3>AI Listener Agent</h3>
+        <p>An agent that subscribes on behalf of listeners. <a href="listen.html">Try /api/agent/auto</a></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-premium" id="how-it-works">
+    <h2 class="section-title">How it works</h2>
+    <div class="how-premium-grid">
+      <div class="how-premium-step">
+        <div class="step-num">01</div>
+        <h3>Sign in</h3>
+        <p>One-click email login. We create a Circle Arc wallet for you in milliseconds.</p>
+        <div class="step-time">~1s</div>
+      </div>
+      <div class="how-premium-step">
+        <div class="step-num">02</div>
+        <h3>Fund $5</h3>
+        <p>Tap “Add USDC”. Testnet-funded via the seller wallet, real on Arc.</p>
+        <div class="step-time">~3s</div>
+      </div>
+      <div class="how-premium-step">
+        <div class="step-num">03</div>
         <h3>Press play</h3>
-        <p>Every second settles a gasless USDC micro-payment on Arc via x402 + Nanopayments.</p>
+        <p>Each second ticks. Each tick is a $0.0001 USDC micro-payment on Arc.</p>
+        <div class="step-time">real-time</div>
       </div>
-      <div class="how-card">
-        <div class="how-num">04</div>
-        <h3>Creator earns</h3>
-        <p>Live earnings in the dashboard. From listener #1, no audience minimum.</p>
+      <div class="how-premium-step">
+        <div class="step-num">04</div>
+        <h3>Pause anytime</h3>
+        <p>The meter stops. The payment stream stops. You only paid for seconds heard.</p>
+        <div class="step-time">instant</div>
       </div>
     </div>
   </section>
 
-  <section class="infra">
-    <h2>Built on</h2>
-    <div class="infra-grid">
-      <div class="infra-tag">Circle Nanopayments</div>
-      <div class="infra-tag">Circle Agent Stack</div>
-      <div class="infra-tag">x402 Protocol</div>
-      <div class="infra-tag">Arc L1</div>
-      <div class="infra-tag">USDC</div>
+  <!-- ARCScan verification -->
+  <section class="verify">
+    <h2 class="section-title">Real on-chain. Verify on Arcscan.</h2>
+    <p class="verify-sub">
+      Every PerStream payment settles on <a href="https://testnet.arcscan.app" target="_blank" rel="noopener">Arc testnet</a> via the Circle GatewayMinter contract. Click any address to verify.
+    </p>
+    <div class="verify-grid">
+      <a href="https://testnet.arcscan.app/address/0xEb375940Cd0D85f06239d68C6e719c71907771f9" target="_blank" rel="noopener" class="verify-card">
+        <div class="verify-label">Seller wallet</div>
+        <div class="verify-addr">0xEb375940Cd0D85f06239d68C6e719c71907771f9</div>
+        <div class="verify-meta">Facilitates all per-second ticks</div>
+        <div class="verify-arrow">View on Arcscan →</div>
+      </a>
+      <a href="https://testnet.arcscan.app/address/0x0077777d7EBA4688BDeF3E311b846F25870A19B9" target="_blank" rel="noopener" class="verify-card">
+        <div class="verify-label">Gateway Wallet</div>
+        <div class="verify-addr">0x0077777d7EBA4688BDeF3E311b846F25870A19B9</div>
+        <div class="verify-meta">Circle's GatewayMinter contract</div>
+        <div class="verify-arrow">View on Arcscan →</div>
+      </a>
+      <a href="https://testnet.arcscan.app/address/0x9b198314420Ffc0f7a5e4895a2CFCc12D0b53493" target="_blank" rel="noopener" class="verify-card">
+        <div class="verify-label">Creator earnings</div>
+        <div class="verify-addr">0x9b198314420Ffc0f7a5e4895a2CFCc12D0b53493</div>
+        <div class="verify-meta">Receives all batched settlements</div>
+        <div class="verify-arrow">View on Arcscan →</div>
+      </a>
     </div>
   </section>
 
+  <!-- Tracks preview -->
+  <section class="tracks-preview">
+    <h2 class="section-title">Episodes live now</h2>
+    <div class="tracks-preview-grid">
+      <div class="track-preview-card">
+        <div class="track-duration">4:16</div>
+        <h3>Cold-Start Cliff — full episode</h3>
+        <p>The story behind how Circle's Arc testnet hit 1M txns in a week.</p>
+        <div class="track-meta">
+          <span class="track-rate">$0.000100 / sec</span>
+          <span class="track-plays">261 plays</span>
+        </div>
+      </div>
+      <div class="track-preview-card">
+        <div class="track-duration">0:26</div>
+        <h3>PerStream Theme — welcome</h3>
+        <p>A 26-second welcome message. Shortest possible listen.</p>
+        <div class="track-meta">
+          <span class="track-rate">$0.000300 / sec</span>
+          <span class="track-plays">142 plays</span>
+        </div>
+      </div>
+      <div class="track-preview-card">
+        <div class="track-duration">0:25</div>
+        <h3>Pitch: why pay per second?</h3>
+        <p>Why your balance should only tick while audio plays.</p>
+        <div class="track-meta">
+          <span class="track-rate">$0.000500 / sec</span>
+          <span class="track-plays">89 plays</span>
+        </div>
+      </div>
+      <div class="track-preview-card">
+        <div class="track-duration">0:17</div>
+        <h3>Demo Loop — spoken test</h3>
+        <p>The whole point of PerStream in 17 seconds.</p>
+        <div class="track-meta">
+          <span class="track-rate">$0.000100 / sec</span>
+          <span class="track-plays">256 plays</span>
+        </div>
+      </div>
+    </div>
+    <div class="tracks-preview-cta">
+      <a href="listen.html" class="btn btn-primary btn-xl">▶ Open the live demo</a>
+    </div>
+  </section>
+
+  <!-- Tech -->
+  <section class="tech">
+    <h2 class="section-title">Built on</h2>
+    <div class="tech-grid">
+      <div class="tech-card">
+        <div class="tech-name">Circle Nanopayments</div>
+        <div class="tech-desc">x402 + batching for sub-cent USDC transfers</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-name">Arc testnet</div>
+        <div class="tech-desc">Sub-second finality, USDC native</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-name">Circle Agent Stack</div>
+        <div class="tech-desc">Embedded wallets, no seed phrases</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-name">Node + sql.js</div>
+        <div class="tech-desc">No native deps. Runs on Termux/Android.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
   <footer class="footer">
-    <div>
-      Built for the <strong>Lepton Agents Hackathon</strong> by
-      <a href="https://x.com/donYemiight" target="_blank" rel="noopener">@donYemiight</a>.
-    </div>
-    <div class="footer-meta">
-      <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener">Source</a> ·
-      <a href="docs/SPEC.md">Spec</a> ·
-      <a href="docs/PITCH.md">Pitch</a>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="assets/prism.svg" alt="" width="24" height="24">
+        <span>PerStream</span>
+      </div>
+      <div class="footer-text">
+        Built by <strong>Oluyemi (@donyemiight)</strong> · Lepton Agents Hackathon · June 2026
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener">GitHub</a>
+        <a href="creator.html">For creators</a>
+        <a href="listen.html">Listen</a>
+      </div>
     </div>
   </footer>
 
-  <script>
-    // Animated demo counter on landing
-    const counter = document.getElementById('demo-counter');
-    let value = 0;
-    setInterval(() => {
-      value += 0.0003;
-      counter.textContent = value.toFixed(4);
-    }, 1000);
-
-    // Show the current mode (live vs mock) on the landing page
-    fetch('api/audit/stats').then(r => r.json()).then(d => {
-      const el = document.getElementById('mode-indicator');
-      if (d.mode === 'live') {
-        el.innerHTML = '🟢 LIVE on Arc testnet · <a href="' + (d.sellerAddress ? 'https://testnet.arcscan.app/address/' + d.sellerAddress : '#') + '" target="_blank">view on Arcscan</a>';
-      } else {
-        el.innerHTML = '🟡 Mock mode (instant demo) · <a href="LIVE_SETUP.html">Switch to live Arc testnet</a>';
-      }
-    }).catch(() => {
-      document.getElementById('mode-indicator').textContent = 'Offline';
-    });
-  </script>
+  <script src="assets/landing.js?v=50"></script>
 </body>
 </html>
