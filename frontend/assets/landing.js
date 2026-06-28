@@ -1,5 +1,5 @@
 /**
- * PerStream Landing Page — live ticker animation + dynamic stats
+ * PerStream Landing Page — live ticker animation + dynamic stats + topbar
  *
  * The hero section has a live ticking meter that animates in real-time
  * even on static (demo mode) deploys. This is what makes the landing
@@ -31,22 +31,29 @@
   }
 
   async function fetchLiveStats() {
+    // Update topbar on every page
+    const txt = document.getElementById('topbar-text');
+    if (txt) {
+      txt.textContent = '🟡 Demo mode · loading live stats…';
+    }
     try {
       const r = await fetch('api/audit/stats');
-      if (!r.ok) return;
+      if (!r.ok) throw new Error('not ok');
       const d = await r.json();
-      const txt = document.getElementById('topbar-text');
+      if (txt) {
+        if (d.mode === 'live') {
+          txt.innerHTML = '🟢 LIVE on Arc testnet · <a href="https://testnet.arcscan.app/address/' + d.sellerAddress + '" target="_blank" rel="noopener">view seller on Arcscan ↗</a>';
+        } else {
+          txt.innerHTML = '🟡 Demo mode · <a href="LIVE_SETUP.html">Switch to live Arc testnet</a>';
+        }
+      }
+      // Update stats if elements exist (landing page)
       const ticksEl = document.getElementById('stat-ticks');
       const paidEl = document.getElementById('stat-paid');
-      if (d.mode === 'live') {
-        if (txt) txt.innerHTML = '🟢 LIVE on Arc testnet · <a href="https://testnet.arcscan.app/address/' + d.sellerAddress + '" target="_blank" rel="noopener">view seller on Arcscan ↗</a>';
-        if (ticksEl) ticksEl.textContent = d.totalTicks || '0';
-        if (paidEl) paidEl.textContent = '$' + parseFloat(d.totalAmountUsd || 0).toFixed(4);
-      } else {
-        if (txt) txt.innerHTML = '🟡 Demo mode · <a href="LIVE_SETUP.html">Switch to live Arc testnet</a>';
-      }
+      if (ticksEl && d.totalTicks) ticksEl.textContent = d.totalTicks;
+      if (paidEl && d.totalAmountUsd) paidEl.textContent = '$' + parseFloat(d.totalAmountUsd).toFixed(4);
     } catch (e) {
-      // silent — demo mode
+      if (txt) txt.innerHTML = '🟡 Demo mode · <a href="LIVE_SETUP.html">Switch to live Arc testnet</a>';
     }
   }
 

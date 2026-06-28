@@ -14,6 +14,22 @@ const PerStream = (() => {
   const STORAGE_KEY = 'perstream_user';
 
   // ─── Toast helper (defined at top so all functions can use it) ───
+  // ── Button loading helper (disable + spinner + auto-re-enable) ──
+  function setLoading(btn, isLoading, originalText) {
+    if (!btn) return () => {};
+    if (isLoading) {
+      btn.dataset.originalText = btn.textContent;
+      btn.textContent = originalText || btn.textContent;
+      btn.classList.add('btn-loading');
+      btn.disabled = true;
+    } else {
+      btn.textContent = btn.dataset.originalText || originalText || btn.textContent;
+      btn.classList.remove('btn-loading');
+      btn.disabled = false;
+    }
+    return () => setLoading(btn, false);
+  }
+
   function showToast(message, type) {
     let toast = document.getElementById('perstream-toast');
     if (!toast) {
@@ -258,8 +274,8 @@ const PerStream = (() => {
     // Deposit buttons — always wired
     const btnDep = document.getElementById('btn-deposit');
     const btnDepBig = document.getElementById('btn-deposit-big');
-    if (btnDep) btnDep.onclick = () => deposit(1);
-    if (btnDepBig) btnDepBig.onclick = () => deposit(5);
+    if (btnDep) btnDep.onclick = (e) => deposit(1, e.currentTarget);
+    if (btnDepBig) btnDepBig.onclick = (e) => deposit(5, e.currentTarget);
 
     // Single, reliable Start/Stop button
     const btnStart = document.getElementById('btn-start-stream');
@@ -277,18 +293,20 @@ const PerStream = (() => {
     }
   }
 
-  async function deposit(amountUsd) {
+  async function deposit(amountUsd, btn) {
     try {
       if (!currentUser) {
         promptLogin();
         return;
       }
+      const stopLoading = setLoading(btn, true, '⏳ Adding…');
       showToast(`Depositing $${amountUsd} USDC…`, 'info');
       const r = await authedFetch('/api/listen/deposit', {
         method: 'POST',
         body: JSON.stringify({ amountUsd }),
       });
       const data = await r.json();
+      stopLoading();
       if (!data.ok) {
         showToast(`Deposit failed: ${data.reason || 'unknown error'}`, 'error');
         showError(data.reason || 'deposit_failed');

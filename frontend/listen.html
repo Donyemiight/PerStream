@@ -3,26 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
   <title>Listen — PerStream</title>
+  <meta name="description" content="Sign in, deposit USDC, and start streaming audio. Pay only for the seconds you hear.">
   <link rel="icon" type="image/svg+xml" href="assets/prism.svg">
-  <link rel="stylesheet" href="assets/styles.css?v=50">
+  <link rel="stylesheet" href="assets/styles.css?v=60">
 </head>
 <body>
-  <nav class="nav">
+  <!-- Top status bar -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <span class="topbar-dot"></span>
+      <span id="topbar-text">Connecting to Arc testnet…</span>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="nav nav-premium">
     <a href="index.html" class="logo">
-      <img src="assets/prism.svg" alt="" width="28" height="28">
-      <span>PerStream</span>
+      <img src="assets/prism.svg" alt="PerStream" width="36" height="36">
+      <span class="logo-text">PerStream</span>
     </a>
     <div class="nav-links">
       <a href="listen.html" class="active">Listen</a>
       <a href="creator.html">For creators</a>
+      <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener">GitHub ↗</a>
     </div>
   </nav>
 
   <main class="listen-page">
+    <!-- Page header -->
+    <section class="page-header">
+      <h1>Listen. Pay only for the seconds you hear.</h1>
+      <p>Sign in, deposit USDC, and start streaming. Every second of audio settles a $0.0001 USDC micro-payment on Arc.</p>
+    </section>
+
     <!-- Auth state -->
     <section class="auth-bar" id="auth-bar">
       <div id="auth-signed-out">
@@ -37,22 +51,40 @@
       </div>
     </section>
 
-    <!-- Track list -->
+    <!-- Track list with skeleton loading -->
     <section class="tracks-section">
-      <h2>Available tracks</h2>
+      <div class="section-header-inline">
+        <h2>Available tracks</h2>
+        <span class="muted" id="tracks-count">—</span>
+      </div>
       <div id="tracks-list" class="tracks-list">
-        <div class="loading">Loading tracks…</div>
+        <!-- Skeleton placeholders shown until tracks load -->
+        <div class="track-card-skeleton">
+          <div class="skeleton skeleton-line" style="width: 30%; margin-bottom: 12px;"></div>
+          <div class="skeleton skeleton-line" style="width: 80%;"></div>
+          <div class="skeleton skeleton-line" style="width: 60%;"></div>
+        </div>
+        <div class="track-card-skeleton">
+          <div class="skeleton skeleton-line" style="width: 25%; margin-bottom: 12px;"></div>
+          <div class="skeleton skeleton-line" style="width: 70%;"></div>
+          <div class="skeleton skeleton-line" style="width: 50%;"></div>
+        </div>
+        <div class="track-card-skeleton">
+          <div class="skeleton skeleton-line" style="width: 35%; margin-bottom: 12px;"></div>
+          <div class="skeleton skeleton-line" style="width: 85%;"></div>
+          <div class="skeleton skeleton-line" style="width: 55%;"></div>
+        </div>
       </div>
     </section>
 
     <!-- How to use -->
     <section class="how-to-use">
       <details>
-        <summary>How does this work? Click to read</summary>
+        <summary>📘 How does this work? Click to read</summary>
         <ol>
           <li><strong>Sign in</strong> with any email — your wallet is created instantly.</li>
           <li><strong>Pick a track</strong> above. Try the 4-minute episode first — it shows the real per-second mechanic.</li>
-          <li><strong>Deposit USDC</strong> with <code>+ Add 1 USDC</code> or <code>+ Add 5 USDC</code>. The status flips to “Ready”.</li>
+          <li><strong>Deposit USDC</strong> with <code>+ Add 1 USDC</code> or <code>+ Add 5 USDC</code>. The status flips to "Ready".</li>
           <li><strong>Tap ▶ Start Streaming</strong>. The audio plays AND your balance ticks down in real time.</li>
           <li><strong>Pause</strong> the meter freezes. <strong>Resume</strong> and it continues from where you left off.</li>
           <li><strong>Try the AI Listener</strong> below the player — an agent can listen and pay for you, then leave a review.</li>
@@ -111,15 +143,61 @@
         </div>
       </div>
     </section>
+
+    <!-- Audit / recent activity (shown when listening) -->
+    <section class="audit-section" id="audit-section" style="display:none;">
+      <div class="section-header-inline">
+        <h2>Recent ticks (Arc testnet)</h2>
+        <a href="creator.html" class="muted">View full creator dashboard →</a>
+      </div>
+      <div id="audit-list" class="audit-list"></div>
+    </section>
   </main>
 
-  <script src="assets/error-overlay.js?v=50"></script>
-  <script src="assets/demo-mode.js?v=50"></script>
-  <script src="assets/feedback-widget.js?v=50"></script>
-  <script src="assets/app.js?v=50"></script>
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <img src="assets/prism.svg" alt="" width="32" height="32">
+          <div>
+            <div class="footer-brand-name">PerStream</div>
+            <div class="footer-brand-desc">Per-second USDC streaming paywall for podcasts.</div>
+          </div>
+        </div>
+        <div class="footer-contact">
+          <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener">GitHub ↗</a>
+          <a href="creator.html">For creators ↗</a>
+          <a href="mailto:hello@perstream.fm">hello@perstream.fm</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div>© 2026 Oluyemi (@donyemiight). MIT License.</div>
+        <div>Built with ❤️ for the <strong>Lepton Agents Hackathon</strong> · June 2026</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Loading skeleton overlay -->
+  <div id="page-loader" class="page-loader">
+    <div class="page-loader-spinner"></div>
+    <div class="page-loader-text">Loading PerStream…</div>
+  </div>
+
+  <script src="assets/error-overlay.js?v=60"></script>
+  <script src="assets/demo-mode.js?v=60"></script>
+  <script src="assets/feedback-widget.js?v=60"></script>
+  <script src="assets/app.js?v=60"></script>
+  <script src="assets/landing.js?v=60"></script>
   <script>
-    // listen-page specific init
-    window.addEventListener('DOMContentLoaded', () => PerStream.initListenPage());
+    // Hide page loader once everything is loaded
+    window.addEventListener('load', () => {
+      const loader = document.getElementById('page-loader');
+      if (loader) {
+        loader.classList.add('loaded');
+        setTimeout(() => loader.remove(), 400);
+      }
+    });
   </script>
 </body>
 </html>

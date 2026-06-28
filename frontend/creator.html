@@ -3,149 +3,133 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
   <title>Creator dashboard — PerStream</title>
+  <meta name="description" content="PerStream creator dashboard. Track real-time earnings, view per-second ticks, verify on-chain on Arcscan.">
   <link rel="icon" type="image/svg+xml" href="assets/prism.svg">
-  <link rel="stylesheet" href="assets/styles.css">
+  <link rel="stylesheet" href="assets/styles.css?v=60">
 </head>
 <body>
-  <nav class="nav">
+  <!-- Top status bar -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <span class="topbar-dot"></span>
+      <span id="topbar-text">Connecting to Arc testnet…</span>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="nav nav-premium">
     <a href="index.html" class="logo">
-      <img src="assets/prism.svg" alt="" width="28" height="28">
-      <span>PerStream</span>
+      <img src="assets/prism.svg" alt="PerStream" width="36" height="36">
+      <span class="logo-text">PerStream</span>
     </a>
     <div class="nav-links">
       <a href="listen.html">Listen</a>
       <a href="creator.html" class="active">For creators</a>
+      <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener">GitHub ↗</a>
     </div>
   </nav>
 
   <main class="creator-page">
+    <!-- Page header -->
+    <section class="page-header">
+      <h1>Earn from listener #1.</h1>
+      <p>Every tick of every track settles on Arc testnet. Real-time earnings, real-time audit trail.</p>
+    </section>
+
     <section class="auth-bar" id="auth-bar">
       <div id="auth-signed-out">
         <span class="muted">Sign in as creator</span>
         <button id="btn-login" class="btn btn-primary btn-sm">Sign in</button>
       </div>
       <div id="auth-signed-in" style="display:none;">
-        <span class="muted">Creator</span>
+        <span class="muted">Logged in as</span>
         <span class="wallet" id="auth-handle">—</span>
+        <span class="wallet-addr" id="auth-wallet">0x…</span>
         <button id="btn-logout" class="btn btn-ghost btn-sm">Sign out</button>
       </div>
     </section>
 
-    <!-- Earnings summary -->
-    <section class="earnings-card" id="earnings-section" style="display:none;">
-      <div class="earnings-main">
-        <div class="earnings-label">Live earnings (withdrawable)</div>
-        <div class="earnings-value" id="earnings-value">0.000000</div>
-        <div class="earnings-sub">USDC · settled on Arc</div>
-      </div>
-      <div class="earnings-actions">
-        <button id="btn-withdraw-all" class="btn btn-primary">Withdraw all</button>
-      </div>
-    </section>
-
-    <!-- On-chain audit trail -->
-    <section class="audit-card" id="audit-section" style="display:none;">
-      <h3>🔍 On-chain audit trail <span class="muted">· every second, paid</span></h3>
-      <p class="muted">
-        Every per-second tick is recorded. In live mode, the transaction hash links directly to
-        the Arc testnet explorer. Click any row to verify the on-chain settlement.
-      </p>
-      <div class="audit-stats-row" id="audit-stats-row">
-        <div class="fs-card">
-          <div class="fs-value" id="audit-tick-count">0</div>
-          <div class="fs-label">ticks recorded</div>
+    <!-- Creator dashboard -->
+    <section class="dashboard" id="dashboard" style="display:none;">
+      <div class="dashboard-cards">
+        <div class="dashboard-card">
+          <div class="dashboard-card-label">Total earned</div>
+          <div class="dashboard-card-value" id="creator-total-earned">$0.000000</div>
+          <div class="dashboard-card-sub">All-time USDC from ticks</div>
         </div>
-        <div class="fs-card">
-          <div class="fs-value" id="audit-total">0.000000</div>
-          <div class="fs-label">total USDC streamed</div>
-        </div>
-        <div class="fs-card">
-          <div class="fs-value" id="audit-mode">mock</div>
-          <div class="fs-label">mode</div>
-        </div>
-      </div>
-      <div class="audit-ticks-list">
-        <h4>Recent ticks <span class="muted">(newest first)</span></h4>
-        <div id="audit-ticks-list"></div>
-        <p class="muted small">
-          Need the full log? <a href="/api/audit/export" target="_blank">Download JSONL</a>
-          · Or query <code>/api/audit/ticks?limit=100</code>
-        </p>
-      </div>
-    </section>
-
-    <!-- Feedback + leads summary -->
-    <section class="feedback-summary" id="feedback-summary" style="display:none;">
-      <h3>User feedback &amp; signups</h3>
-      <div class="feedback-stats-row">
-        <div class="fs-card">
-          <div class="fs-value" id="fs-avg-rating">—</div>
-          <div class="fs-label">avg rating</div>
-        </div>
-        <div class="fs-card">
-          <div class="fs-value" id="fs-rating-count">0</div>
-          <div class="fs-label">ratings</div>
-        </div>
-        <div class="fs-card">
-          <div class="fs-value" id="fs-leads">0</div>
-          <div class="fs-label">early-access signups</div>
-        </div>
-      </div>
-      <div class="recent-reviews" id="recent-reviews">
-        <h4>Recent reviews</h4>
-        <div id="reviews-list"></div>
-      </div>
-    </section>
-
-    <!-- Track upload -->
-    <section class="upload-section" id="upload-section" style="display:none;">
-      <h2>Upload a new track</h2>
-      <form id="upload-form" class="upload-form">
-        <div class="form-row">
-          <label>Title</label>
-          <input type="text" name="title" required placeholder="Episode 1 — The cold-start cliff">
-        </div>
-        <div class="form-row">
-          <label>Description</label>
-          <textarea name="description" rows="2" placeholder="Optional one-liner"></textarea>
-        </div>
-        <div class="form-row two-col">
-          <div>
-            <label>Price per second (USDC)</label>
-            <input type="number" name="pricePerSecUsd" value="0.0003" step="0.0001" min="0.000001" required>
-          </div>
-          <div>
-            <label>Duration (sec, 0 = unknown)</label>
-            <input type="number" name="durationSec" value="0" min="0">
+        <div class="dashboard-card">
+          <div class="dashboard-card-label">Available to withdraw</div>
+          <div class="dashboard-card-value" id="creator-available">$0.000000</div>
+          <div class="dashboard-card-sub">
+            <button id="btn-withdraw-all" class="btn btn-primary btn-sm">Withdraw to wallet</button>
           </div>
         </div>
-        <div class="form-row">
-          <label>Audio file (mp3, m4a, wav)</label>
-          <input type="file" name="audio" accept="audio/*" required>
+        <div class="dashboard-card">
+          <div class="dashboard-card-label">Tracks live</div>
+          <div class="dashboard-card-value" id="creator-track-count">0</div>
+          <div class="dashboard-card-sub">Episodes earning</div>
         </div>
-        <button type="submit" class="btn btn-primary">Upload track</button>
-      </form>
-    </section>
+      </div>
 
-    <!-- Tracks list -->
-    <section class="tracks-section" id="tracks-section" style="display:none;">
-      <h2>Your tracks</h2>
-      <div id="tracks-list" class="tracks-list">
-        <div class="loading">Loading…</div>
+      <!-- Recent ticks (audit) -->
+      <div class="section-header-inline">
+        <h2>Recent ticks (per-second USDC transfers)</h2>
+        <span class="muted" id="ticks-count">—</span>
+      </div>
+      <div id="audit-list" class="audit-list">
+        <div class="track-card-skeleton">
+          <div class="skeleton skeleton-line" style="width: 80%;"></div>
+          <div class="skeleton skeleton-line" style="width: 60%;"></div>
+        </div>
       </div>
     </section>
   </main>
 
-  <script src="assets/error-overlay.js?v=50"></script>
-  <script src="assets/demo-mode.js?v=50"></script>
-  <script src="assets/feedback-widget.js?v=50"></script>
-  <script src="assets/app.js?v=50"></script>
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <img src="assets/prism.svg" alt="" width="32" height="32">
+          <div>
+            <div class="footer-brand-name">PerStream</div>
+            <div class="footer-brand-desc">Per-second USDC streaming paywall for podcasts.</div>
+          </div>
+        </div>
+        <div class="footer-contact">
+          <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener">GitHub ↗</a>
+          <a href="listen.html">Listen ↗</a>
+          <a href="mailto:hello@perstream.fm">hello@perstream.fm</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div>© 2026 Oluyemi (@donyemiight). MIT License.</div>
+        <div>Built with ❤️ for the <strong>Lepton Agents Hackathon</strong> · June 2026</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Loading skeleton overlay -->
+  <div id="page-loader" class="page-loader">
+    <div class="page-loader-spinner"></div>
+    <div class="page-loader-text">Loading dashboard…</div>
+  </div>
+
+  <script src="assets/error-overlay.js?v=60"></script>
+  <script src="assets/demo-mode.js?v=60"></script>
+  <script src="assets/feedback-widget.js?v=60"></script>
+  <script src="assets/app.js?v=60"></script>
+  <script src="assets/landing.js?v=60"></script>
   <script>
-    window.addEventListener('DOMContentLoaded', () => PerStream.initCreatorPage());
+    // Hide page loader once everything is loaded
+    window.addEventListener('load', () => {
+      const loader = document.getElementById('page-loader');
+      if (loader) {
+        loader.classList.add('loaded');
+        setTimeout(() => loader.remove(), 400);
+      }
+    });
   </script>
 </body>
 </html>
