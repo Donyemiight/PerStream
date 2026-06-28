@@ -8,6 +8,10 @@ process.env.PORT = process.env.PORT || '3099';
 process.env.PAYMENTS_MODE = process.env.PAYMENTS_MODE || 'mock';
 process.env.NODE_ENV = 'test';
 
+// Count expected tests for self-check
+const EXPECTED_TESTS = 16;
+console.log(`[smoke] running ${EXPECTED_TESTS} tests against http://localhost:${process.env.PORT}`);
+
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
