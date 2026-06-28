@@ -6,7 +6,7 @@
   <title>Listen — PerStream</title>
   <meta name="description" content="Sign in, deposit USDC, and start streaming audio. Pay only for the seconds you hear.">
   <link rel="icon" type="image/svg+xml" href="assets/prism.svg">
-  <link rel="stylesheet" href="assets/styles.css?v=90">
+  <link rel="stylesheet" href="assets/styles.css?v=95">
 </head>
 <body>
   <!-- Top status bar -->
@@ -25,7 +25,7 @@
     </a>
     <div class="nav-links">
       <a href="listen.html" class="active">Listen</a>
-      <a href="creator.html">For creators</a>
+      <a href="creator.html" id="nav-creator-link">Creator Dashboard</a>
       <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener">GitHub ↗</a>
     </div>
   </nav>
@@ -184,11 +184,11 @@
     <div class="page-loader-text">Loading PerStream…</div>
   </div>
 
-  <script src="assets/error-overlay.js?v=90"></script>
-  <script src="assets/demo-mode.js?v=90"></script>
-  <script src="assets/feedback-widget.js?v=90"></script>
-  <script src="assets/app.js?v=90"></script>
-  <script src="assets/landing.js?v=90"></script>
+  <script src="assets/error-overlay.js?v=95"></script>
+  <script src="assets/demo-mode.js?v=95"></script>
+  <script src="assets/feedback-widget.js?v=95"></script>
+  <script src="assets/app.js?v=95"></script>
+  <script src="assets/landing.js?v=95"></script>
   <script>
     // Hide page loader once everything is loaded
     window.addEventListener('load', () => {
@@ -198,6 +198,20 @@
         setTimeout(() => loader.remove(), 400);
       }
     });
+    // Smart nav label: if signed in, show "Dashboard" instead of "Creator Dashboard"
+    (function() {
+      try {
+        const raw = localStorage.getItem('perstream_user');
+        if (raw) {
+          const user = JSON.parse(raw);
+          const navLink = document.getElementById('nav-creator-link');
+          if (navLink) {
+            navLink.textContent = user.role === 'creator' ? 'Dashboard' : 'Creator Dashboard';
+          }
+        }
+      } catch (e) {}
+    })();
+
     // Initialize the listen page once DOM + scripts are ready
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => PerStream.initListenPage());
