@@ -6,17 +6,17 @@
 
 | Type | URL |
 |---|---|
-| **Static** | `https://a59rvyjf9svm.space.minimax.io` |
-| **Live (Arc testnet)** | `https://approaches-browsers-pci-merry.trycloudflare.com` |
+| **Static** | `https://bmabr9uvyv2q.space.minimax.io` |
+| **Live (Arc testnet)** | `https://seas-ing-served-amy.trycloudflare.com` |
 
 ### Direct pages
 
 | Page | Static | Live |
 |---|---|---|
-| Landing | `https://a59rvyjf9svm.space.minimax.io` | `https://approaches-browsers-pci-merry.trycloudflare.com` |
-| Listen | `https://a59rvyjf9svm.space.minimax.io/listen.html` | `https://approaches-browsers-pci-merry.trycloudflare.com/listen.html` |
-| Creator | `https://a59rvyjf9svm.space.minimax.io/creator.html` | `https://approaches-browsers-pci-merry.trycloudflare.com/creator.html` |
-| LIVE_SETUP | `https://a59rvyjf9svm.space.minimax.io/LIVE_SETUP.html` | `https://approaches-browsers-pci-merry.trycloudflare.com/LIVE_SETUP.html` |
+| Landing | `https://bmabr9uvyv2q.space.minimax.io` | `https://seas-ing-served-amy.trycloudflare.com` |
+| Listen | `https://bmabr9uvyv2q.space.minimax.io/listen.html` | `https://seas-ing-served-amy.trycloudflare.com/listen.html` |
+| Creator | `https://bmabr9uvyv2q.space.minimax.io/creator.html` | `https://seas-ing-served-amy.trycloudflare.com/creator.html` |
+| LIVE_SETUP | `https://bmabr9uvyv2q.space.minimax.io/LIVE_SETUP.html` | `https://seas-ing-served-amy.trycloudflare.com/LIVE_SETUP.html` |
 
 ## GitHub
 

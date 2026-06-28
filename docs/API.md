@@ -1,8 +1,8 @@
 # PerStream — API Reference
 
 **Base URL (local):** `http://localhost:3000`
-**Base URL (live):** `https://approaches-browsers-pci-merry.trycloudflare.com`
-**Base URL (static):** `https://a59rvyjf9svm.space.minimax.io` (demo mode only)
+**Base URL (live):** `https://seas-ing-served-amy.trycloudflare.com`
+**Base URL (static):** `https://bmabr9uvyv2q.space.minimax.io` (demo mode only)
 
 **Auth:** Most endpoints accept an optional `X-User-Id` header. Creator endpoints require it.
 

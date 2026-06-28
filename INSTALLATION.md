@@ -424,6 +424,6 @@ After install:
 1. Open `http://localhost:3000` and explore
 2. Try the AI Listener Agent: `curl -X POST http://localhost:3000/api/agent/auto -H "Content-Type: application/json" -d '{"budgetUsd": 5, "maxTracks": 3}'`
 3. Read [`docs/PITCH.md`](docs/PITCH.md) for the sponsor pitch script
-4. Watch the [live demo](https://a59rvyjf9svm.space.minimax.io)
+4. Watch the [live demo](https://bmabr9uvyv2q.space.minimax.io)
 
 **Built by Oluyemi (donyemiight) for the Lepton Agents Hackathon 2026.**
