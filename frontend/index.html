@@ -7,7 +7,7 @@
   <meta name="description" content="PerStream is a per-second USDC streaming paywall for podcasts and long-form audio, built on Circle Nanopayments and Arc testnet.">
   <meta name="theme-color" content="#0a0a0f">
   <link rel="icon" type="image/svg+xml" href="assets/prism.svg">
-  <link rel="stylesheet" href="assets/styles.css?v=95">
+  <link rel="stylesheet" href="assets/styles.css?v=96">
 </head>
 <body class="landing">
 
@@ -104,7 +104,7 @@
             <span class="btn-content">▶ Try the live demo</span>
           </a>
           <a href="creator.html" class="btn btn-creator btn-xl btn-ripple" id="hero-creator-btn">
-            <span class="btn-content">🎙️ For Creators</span>
+            <span class="btn-content">🎙️ Creator Dashboard</span>
           </a>
           <a href="#problem" class="btn btn-ghost btn-xl">
             See why ↓
@@ -755,7 +755,7 @@
     <button class="back-to-top" id="back-to-top" aria-label="Back to top">↑</button>
   </footer>
 
-  <script src="assets/landing.js?v=95"></script>
+  <script src="assets/landing.js?v=96"></script>
   <script>
     // Smart nav label: if signed in, show "Dashboard" instead of "Creator Dashboard"
     (function() {
@@ -766,13 +766,9 @@
           const navLink = document.getElementById('nav-creator-link');
           const heroBtn = document.getElementById('hero-creator-btn');
           const ctaDash = document.getElementById('creator-cta-dashboard');
-          if (navLink) {
-            navLink.textContent = 'Dashboard';
-            navLink.setAttribute('aria-label', 'Open your creator dashboard');
-          }
-          if (heroBtn) {
-            heroBtn.querySelector('.btn-content').textContent = '🎙️ Dashboard';
-          }
+          // Nav stays as 'Creator Dashboard' for clarity
+          // Hero button stays as '🎙️ Creator Dashboard' regardless of auth state
+          // (user requested consistency with 'Try the live demo' button)
           if (ctaDash) {
             ctaDash.querySelector('.btn-content').textContent = '📊 Open Dashboard';
           }
