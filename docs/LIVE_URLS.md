@@ -1,15 +1,45 @@
-# PerStream Live URLs
+# PerStream — Live URLs
 
-## Current Live Demo
-**https://providence-musician-civic-watt.trycloudflare.com**
+> Current production URLs for the PerStream demo. Updated: 2026-06-28.
 
-Status: ACTIVE (since 2026-06-27 21:09 UTC)
+## Current Live (verified working)
 
-## Tunnel Info
-The live demo runs on a Cloudflare Quick Tunnel. If the URL changes, check
-the latest commit in this repo — the homepage URL is updated automatically.
+| Type | URL |
+|---|---|
+| **Static** | `https://a59rvyjf9svm.space.minimax.io` |
+| **Live (Arc testnet)** | `https://approaches-browsers-pci-merry.trycloudflare.com` |
 
-If you see "Error 1033", the tunnel may have died. Restart it with:
+### Direct pages
+
+| Page | Static | Live |
+|---|---|---|
+| Landing | `https://a59rvyjf9svm.space.minimax.io` | `https://approaches-browsers-pci-merry.trycloudflare.com` |
+| Listen | `https://a59rvyjf9svm.space.minimax.io/listen.html` | `https://approaches-browsers-pci-merry.trycloudflare.com/listen.html` |
+| Creator | `https://a59rvyjf9svm.space.minimax.io/creator.html` | `https://approaches-browsers-pci-merry.trycloudflare.com/creator.html` |
+| LIVE_SETUP | `https://a59rvyjf9svm.space.minimax.io/LIVE_SETUP.html` | `https://approaches-browsers-pci-merry.trycloudflare.com/LIVE_SETUP.html` |
+
+## GitHub
+
+- **Repo:** https://github.com/Donyemiight/PerStream
+- **Latest release:** https://github.com/Donyemiight/PerStream/releases/tag/v0.1.0-termux
+- **Bundle:** https://github.com/Donyemiight/PerStream/releases/download/v0.1.0-termux/perstream-v96.tar.gz
+
+## Arc testnet addresses (canonical)
+
+| Role | Address |
+|---|---|
+| Seller wallet | `0xEb375940Cd0D85f06239d68C6e719c71907771f9` |
+| Gateway Wallet | `0x0077777d7EBA4688BDeF3E311b846F25870A19B9` |
+| Creator earnings | `0x9b198314420Ffc0f7a5e4895a2CFCc12D0b53493` |
+
+View on Arcscan:
+- https://testnet.arcscan.app/address/0xEb375940Cd0D85f06239d68C6e719c71907771f9
+- https://testnet.arcscan.app/address/0x0077777d7EBA4688BDeF3E311b846F25870A19B9
+- https://testnet.arcscan.app/address/0x9b198314420Ffc0f7a5e4895a2CFCc12D0b53493
+
+## Tunnel restart
+
+If the live tunnel dies:
 
 ```bash
 pkill -9 cloudflared 2>/dev/null
@@ -21,13 +51,4 @@ URL=$(grep -oE "https://[a-zA-Z0-9-]+\.trycloudflare\.com" /tmp/tunnel.log | hea
 echo "$URL"
 ```
 
-## Static Hosted Version (read-only)
-The frontend is also deployed at a stable static URL for read-only preview.
-
-## Backup URLs (this session)
-| URL | Active |
-|-----|--------|
-| providence-musician-civic-watt.trycloudflare.com | YES |
-| invision-specified-caribbean-occupational.trycloudflare.com | DEAD |
-| jerry-newport-textbooks-importantly.trycloudflare.com | DEAD |
-| destination-hanging-boating-months.trycloudflare.com | DEAD |
+After restart, update this file with the new URL.
