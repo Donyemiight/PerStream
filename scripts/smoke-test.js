@@ -4,24 +4,29 @@
  * Boots the server in-process, hits every endpoint, asserts responses, exits.
  */
 
+const path = require('path');
+const fs = require('fs');
+const http = require('http');
+
 process.env.PORT = process.env.PORT || '3099';
-process.env.PAYMENTS_MODE = process.env.PAYMENTS_MODE || 'mock';
+// ALWAYS mock mode for smoke test (regardless of .env)
+process.env.PAYMENTS_MODE = 'mock';
 process.env.NODE_ENV = 'test';
+process.env.DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'backend', 'data', 'test.db');
+process.env.AUDIO_DIR = process.env.AUDIO_DIR || path.join(__dirname, '..', 'backend', 'data', 'test-audio');
+
+// Wipe ALL test data aggressively
+const TEST_DB = process.env.DB_PATH;
+const TEST_AUDIO = process.env.AUDIO_DIR;
+try { fs.unlinkSync(TEST_DB); } catch {}
+try { fs.rmSync(TEST_DB + '-journal', { force: true }); } catch {}
+try { fs.rmSync(TEST_AUDIO, { recursive: true, force: true }); } catch {}
+fs.mkdirSync(TEST_AUDIO, { recursive: true });
 
 // Count expected tests for self-check
 const EXPECTED_TESTS = 16;
 console.log(`[smoke] running ${EXPECTED_TESTS} tests against http://localhost:${process.env.PORT}`);
-
-const http = require('http');
-const path = require('path');
-const fs = require('fs');
-
-// Reset DB for fresh test
-const DB_PATH = path.join(__dirname, '..', 'backend', 'data', 'test.db');
-try { fs.unlinkSync(DB_PATH); } catch {}
-process.env.DB_PATH = DB_PATH;
-process.env.AUDIO_DIR = path.join(__dirname, '..', 'backend', 'data', 'test-audio');
-process.env.PUBLIC_BASE_URL = `http://localhost:${process.env.PORT}`;
+console.log(`[smoke] DB: ${TEST_DB}`);
 
 const db = require('../backend/src/db');
 const app = require('../backend/src/server.js');
