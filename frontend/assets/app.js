@@ -403,7 +403,12 @@ const PerStream = (() => {
 
       const list = document.getElementById('tracks-list');
       if (!data.tracks.length) {
-        list.innerHTML = '<div class="loading">No tracks yet — upload one above.</div>';
+        list.innerHTML = `<div class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <div class="empty-state-title">No episodes yet</div>
+          <div class="empty-state-message">Be the first creator — upload an MP3 and set a per-second price.</div>
+          <a href="creator.html" class="btn btn-primary">Become a creator →</a>
+        </div>`;
       } else {
         list.innerHTML = data.tracks.map(t => `
           <div class="track-item">

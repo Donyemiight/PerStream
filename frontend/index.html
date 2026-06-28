@@ -7,7 +7,7 @@
   <meta name="description" content="PerStream is a per-second USDC streaming paywall for podcasts and long-form audio, built on Circle Nanopayments and Arc testnet.">
   <meta name="theme-color" content="#0a0a0f">
   <link rel="icon" type="image/svg+xml" href="assets/prism.svg">
-  <link rel="stylesheet" href="assets/styles.css?v=70">
+  <link rel="stylesheet" href="assets/styles.css?v=80">
 </head>
 <body class="landing">
 
@@ -19,7 +19,17 @@
       <div class="loader-ring loader-ring-3"></div>
       <div class="loader-core"></div>
     </div>
-    <div class="loader-text">Initializing AI · <span id="loader-step">Connecting…</span></div>
+    <div class="loader-stages">
+      <div class="loader-stage" data-stage="1"><span class="loader-stage-icon">🧠</span><span class="loader-stage-text">Understanding your request</span><span class="loader-stage-check">✓</span></div>
+      <div class="loader-stage" data-stage="2"><span class="loader-stage-icon">🔍</span><span class="loader-stage-text">Analyzing context</span><span class="loader-stage-check">✓</span></div>
+      <div class="loader-stage" data-stage="3"><span class="loader-stage-icon">⚡</span><span class="loader-stage-text">Running AI reasoning</span><span class="loader-stage-check">✓</span></div>
+      <div class="loader-stage" data-stage="4"><span class="loader-stage-icon">✨</span><span class="loader-stage-text">Generating response</span><span class="loader-stage-check">✓</span></div>
+      <div class="loader-stage" data-stage="5"><span class="loader-stage-icon">✅</span><span class="loader-stage-text">Finalizing output</span><span class="loader-stage-check">✓</span></div>
+    </div>
+    <div class="loader-progress">
+      <div class="loader-progress-bar" id="loader-progress-bar"></div>
+    </div>
+    <div class="loader-text"><span id="loader-step">Initializing…</span></div>
   </div>
 
   <!-- Floating background orbs (glassmorphism) -->
@@ -51,18 +61,22 @@
       <span class="logo-badge">v60</span>
     </a>
     <div class="nav-links">
+      <a href="#problem">Problem</a>
+      <a href="#solution">Solution</a>
       <a href="#how-it-works">How it works</a>
-      <a href="#features">Features</a>
-      <a href="#built-with">Stack</a>
+      <a href="#benefits">Benefits</a>
+      <a href="#stack">Stack</a>
       <a href="listen.html">Listen</a>
       <a href="creator.html">For creators</a>
-      <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener" class="nav-link-github">
+      <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener" class="nav-link-github" aria-label="GitHub">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
       </a>
     </div>
   </nav>
 
-  <!-- HERO -->
+  <!-- ============================================================ -->
+  <!-- 1. HERO — answers: What? Who? Why?                         -->
+  <!-- ============================================================ -->
   <section class="hero-premium">
     <div class="hero-premium-grid">
       <div class="hero-premium-content">
@@ -71,29 +85,29 @@
           <span class="hero-badge-text">Built for Lepton Agents Hackathon · Track RFB 4</span>
         </div>
 
-        <h1 class="hero-title-premium">
+        <h1 class="hero-title-premium entrance-fade">
           Pay <span class="hero-accent-premium">per second.</span><br>
           Listen <span class="hero-accent-premium">on demand.</span>
         </h1>
 
-        <p class="hero-one-liner">
-          PerStream is a <strong>per-second USDC streaming paywall</strong> for podcasts — listeners pay only for the seconds they hear, creators earn from listener&nbsp;#1.
+        <p class="hero-one-liner entrance-fade entrance-delay-1">
+          <strong>PerStream</strong> is a per-second USDC streaming paywall for podcasts — listeners pay <em>only</em> for the seconds they hear, creators earn from listener&nbsp;#1.
         </p>
 
-        <p class="hero-sub-premium">
-          Built on <strong>Circle Nanopayments</strong>, <strong>x402</strong> and <strong>Arc testnet</strong>. No subscriptions. No ads. No minimum audience.
+        <p class="hero-sub-premium entrance-fade entrance-delay-2">
+          For <strong>independent creators</strong> and <strong>AI-native listeners</strong>. Built on <strong>Circle Nanopayments</strong>, <strong>x402</strong> and <strong>Arc testnet</strong>. No subscriptions. No ads. No minimum audience.
         </p>
 
-        <div class="hero-cta-premium">
+        <div class="hero-cta-premium entrance-fade entrance-delay-3">
           <a href="listen.html" class="btn btn-primary btn-xl btn-ripple">
             <span class="btn-content">▶ Try the live demo</span>
           </a>
-          <a href="#how-it-works" class="btn btn-ghost btn-xl">
-            How it works <span class="btn-arrow-down">↓</span>
+          <a href="#problem" class="btn btn-ghost btn-xl">
+            See why ↓
           </a>
         </div>
 
-        <div class="hero-trust">
+        <div class="hero-trust entrance-fade entrance-delay-4">
           <div class="hero-trust-item">
             <span class="hero-trust-dot"></span>
             <span>No wallet required</span>
@@ -110,7 +124,7 @@
       </div>
 
       <!-- Live ticker card with glassmorphism -->
-      <div class="hero-visual-premium">
+      <div class="hero-visual-premium entrance-fade entrance-delay-2">
         <div class="ticker-card glass-card">
           <div class="ticker-glow"></div>
           <div class="ticker-header">
@@ -166,13 +180,88 @@
     </div>
   </section>
 
-  <!-- HOW IT WORKS -->
+  <!-- ============================================================ -->
+  <!-- 2. PROBLEM                                                 -->
+  <!-- ============================================================ -->
+  <section class="problem-section" id="problem">
+    <div class="section-header">
+      <div class="section-eyebrow"><span class="eyebrow-dot"></span>The problem</div>
+      <h2 class="section-title">Audio monetization is broken.</h2>
+      <p class="section-sub">Listeners pay for hours they never hear. Creators wait weeks for payouts. Platforms take 30–50%. And nobody — nobody — has built the obvious primitive.</p>
+    </div>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="problem-icon">💸</div>
+        <h3>Subscriptions waste listener money</h3>
+        <p>You subscribe for one show. You listen to one show. You paid for 12. PerStream fixes that.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">⏰</div>
+        <h3>Creators wait for payouts</h3>
+        <p>Traditional platforms batch monthly. PerStream settles <em>every second</em>. You earn as you teach, talk, perform.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">📉</div>
+        <h3>High platform fees</h3>
+        <p>30–50% of revenue goes to middlemen. On PerStream, the only cost is gas — fractions of a cent.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">🔐</div>
+        <h3>Crypto UX is hostile</h3>
+        <p>Seed phrases, gas fees, network switches. Most listeners bounce. PerStream hides all of that.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 3. SOLUTION                                                -->
+  <!-- ============================================================ -->
+  <section class="solution-section" id="solution">
+    <div class="section-header">
+      <div class="section-eyebrow"><span class="eyebrow-dot"></span>The solution</div>
+      <h2 class="section-title">Pay for seconds. Earn from seconds.</h2>
+      <p class="section-sub">PerStream is the world's first per-second USDC streaming paywall. It uses Circle Nanopayments and Arc testnet to settle <strong>real on-chain USDC</strong> every second audio plays.</p>
+    </div>
+    <div class="solution-card glass-card">
+      <div class="solution-flow">
+        <div class="solution-flow-step">
+          <div class="solution-flow-num">1</div>
+          <div class="solution-flow-label">Listener signs in</div>
+          <div class="solution-flow-sub">Email → Arc wallet (1s)</div>
+        </div>
+        <div class="solution-flow-arrow">→</div>
+        <div class="solution-flow-step solution-flow-step-active">
+          <div class="solution-flow-num">2</div>
+          <div class="solution-flow-label">Press play</div>
+          <div class="solution-flow-sub">x402 payment required</div>
+        </div>
+        <div class="solution-flow-arrow">→</div>
+        <div class="solution-flow-step">
+          <div class="solution-flow-num">3</div>
+          <div class="solution-flow-label">Tick each second</div>
+          <div class="solution-flow-sub">$0.0001 USDC on Arc</div>
+        </div>
+        <div class="solution-flow-arrow">→</div>
+        <div class="solution-flow-step">
+          <div class="solution-flow-num">4</div>
+          <div class="solution-flow-label">Creator earns</div>
+          <div class="solution-flow-sub">Settled every 30s on-chain</div>
+        </div>
+      </div>
+      <div class="solution-card-cta">
+        <a href="listen.html" class="btn btn-primary btn-xl btn-ripple">
+          <span class="btn-content">▶ Try the demo →</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 4. HOW IT WORKS                                            -->
+  <!-- ============================================================ -->
   <section class="how-premium" id="how-it-works">
     <div class="section-header">
-      <div class="section-eyebrow">
-        <span class="eyebrow-dot"></span>
-        How it works
-      </div>
+      <div class="section-eyebrow"><span class="eyebrow-dot"></span>How it works</div>
       <h2 class="section-title">From email to on-chain in 4 steps</h2>
       <p class="section-sub">The simplest UX for the most advanced payment primitive. No wallet, no seed phrase, no friction.</p>
     </div>
@@ -220,13 +309,55 @@
     </div>
   </section>
 
-  <!-- FEATURES -->
+  <!-- ============================================================ -->
+  <!-- 5. BENEFITS — "Why choose this?"                          -->
+  <!-- ============================================================ -->
+  <section class="benefits" id="benefits">
+    <div class="section-header">
+      <div class="section-eyebrow"><span class="eyebrow-dot"></span>Why choose PerStream</div>
+      <h2 class="section-title">Real benefits, not just features</h2>
+      <p class="section-sub">What you actually get when you use PerStream — for listeners, creators, and AI agents alike.</p>
+    </div>
+    <div class="benefits-grid">
+      <div class="benefit-card">
+        <div class="benefit-icon">⚡</div>
+        <h3>Pay only for what you hear</h3>
+        <p>Forget subscriptions. Forget ads. With PerStream, your balance ticks down only while audio plays. Pause = stop paying.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">💰</div>
+        <h3>Earn from listener #1</h3>
+        <p>No minimum audience, no waiting for monthly payouts. Your first listener earns you real USDC, settled in seconds.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">🔐</div>
+        <h3>No crypto knowledge required</h3>
+        <p>Listeners sign in with email. Embedded wallets via Circle Agent Stack. No seed phrases, no MetaMask, no friction.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">🤖</div>
+        <h3>AI agents as economic actors</h3>
+        <p>AI Listener Agents can subscribe, stream, and leave ratings on behalf of users. The future of audio is autonomous.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">📺</div>
+        <h3>Verifiable on-chain</h3>
+        <p>Every tick settles on Arc via Circle's GatewayMinter. Click any address — verify on Arcscan. No black boxes.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">🌍</div>
+        <h3>Runs anywhere</h3>
+        <p>Pure-JS backend (Node + sql.js). No native dependencies. Runs on Termux, Android, iOS, browsers, anywhere.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 6. FEATURES                                                -->
+  <!-- ============================================================ -->
   <section class="features" id="features">
     <div class="section-header">
-      <div class="section-eyebrow">
-        <span class="eyebrow-dot"></span>
-        Features
-      </div>
+      <div class="section-eyebrow"><span class="eyebrow-dot"></span>Features</div>
       <h2 class="section-title">Built for the next era of audio</h2>
       <p class="section-sub">A premium experience for listeners, creators, and AI agents alike.</p>
     </div>
@@ -270,85 +401,12 @@
     </div>
   </section>
 
-  <!-- HIGHLIGHTS / TESTIMONIALS STYLE (project highlights, NOT fake reviews) -->
-  <section class="highlights">
-    <div class="section-header">
-      <div class="section-eyebrow">
-        <span class="eyebrow-dot"></span>
-        Project highlights
-      </div>
-      <h2 class="section-title">What makes PerStream different</h2>
-    </div>
-    <div class="highlights-grid">
-      <div class="highlight-card">
-        <div class="highlight-icon">🚀</div>
-        <h3>Lightning-fast USDC</h3>
-        <p>Sub-second settlement on Arc. Finality before the audio buffer fills.</p>
-      </div>
-      <div class="highlight-card">
-        <div class="highlight-icon">🏛️</div>
-        <h3>Modern architecture</h3>
-        <p>Node + Express + sql.js + x402. Zero native dependencies. Runs anywhere.</p>
-      </div>
-      <div class="highlight-card">
-        <div class="highlight-icon">📱</div>
-        <h3>Responsive experience</h3>
-        <p>Mobile-first design. Touch-friendly controls. Works offline in demo mode.</p>
-      </div>
-      <div class="highlight-card">
-        <div class="highlight-icon">🏆</div>
-        <h3>Hackathon-ready</h3>
-        <p>Built in 2 weeks for the Lepton Agents Hackathon. Production-grade polish.</p>
-      </div>
-      <div class="highlight-card">
-        <div class="highlight-icon">✨</div>
-        <h3>Production-quality UI</h3>
-        <p>Glassmorphism, gradient typography, micro-animations, accessibility-first.</p>
-      </div>
-      <div class="highlight-card">
-        <div class="highlight-icon">🔓</div>
-        <h3>Open source</h3>
-        <p>MIT licensed. Auditable smart contract. Verifiable Arc testnet txs.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- STATISTICS with animated counters -->
-  <section class="statistics">
-    <div class="section-header">
-      <div class="section-eyebrow">
-        <span class="eyebrow-dot"></span>
-        By the numbers
-      </div>
-      <h2 class="section-title">Production-ready, built to scale</h2>
-    </div>
-    <div class="statistics-grid">
-      <div class="stat-card">
-        <div class="stat-num"><span class="counter" data-target="100">0</span><span class="stat-suffix">%</span></div>
-        <div class="stat-label">Responsive across all devices</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num"><span class="counter" data-target="3">0</span><span class="stat-suffix">s</span></div>
-        <div class="stat-label">Time to first paid tick</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num"><span class="counter" data-target="5042">0</span></div>
-        <div class="stat-label">Arc testnet chain ID</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num"><span class="counter" data-target="6">0</span><span class="stat-suffix">+</span></div>
-        <div class="stat-label">Circle primitives used</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ARCScan verification -->
+  <!-- ============================================================ -->
+  <!-- 7. ON-CHAIN PROOF (Arcscan)                                -->
+  <!-- ============================================================ -->
   <section class="verify">
     <div class="section-header">
-      <div class="section-eyebrow">
-        <span class="eyebrow-dot"></span>
-        On-chain proof
-      </div>
+      <div class="section-eyebrow"><span class="eyebrow-dot"></span>On-chain proof</div>
       <h2 class="section-title">Real on-chain. Real USDC. Real Arcscan.</h2>
       <p class="section-sub">Every PerStream payment settles on <a href="https://testnet.arcscan.app" target="_blank" rel="noopener" class="inline-link">Arc testnet</a> via the Circle GatewayMinter contract. Click any address to verify.</p>
     </div>
@@ -377,10 +435,7 @@
   <!-- Episodes preview -->
   <section class="tracks-preview">
     <div class="section-header">
-      <div class="section-eyebrow">
-        <span class="eyebrow-dot"></span>
-        Episodes
-      </div>
+      <div class="section-eyebrow"><span class="eyebrow-dot"></span>Episodes</div>
       <h2 class="section-title">Listen now</h2>
     </div>
     <div class="tracks-preview-grid">
@@ -421,71 +476,14 @@
         </div>
       </div>
     </div>
-    <div class="tracks-preview-cta">
-      <a href="listen.html" class="btn btn-primary btn-xl btn-ripple">
-        <span class="btn-content">▶ Open the live demo</span>
-      </a>
-    </div>
   </section>
 
-  <!-- PROJECT INFO -->
-  <section class="project-info">
+  <!-- ============================================================ -->
+  <!-- 8. TECHNOLOGY STACK                                        -->
+  <!-- ============================================================ -->
+  <section class="built-with" id="stack">
     <div class="section-header">
-      <div class="section-eyebrow">
-        <span class="eyebrow-dot"></span>
-        Project
-      </div>
-      <h2 class="section-title">Open source & built for the hackathon</h2>
-    </div>
-    <div class="project-grid">
-      <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener" class="project-card project-card-github">
-        <div class="project-card-icon">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-        </div>
-        <div class="project-card-label">GitHub Repository</div>
-        <div class="project-card-value">Donyemiight/PerStream</div>
-        <div class="project-card-arrow">View source code →</div>
-      </a>
-      <a href="listen.html" class="project-card project-card-demo">
-        <div class="project-card-icon">🚀</div>
-        <div class="project-card-label">Live Demo</div>
-        <div class="project-card-value">Try the streaming demo</div>
-        <div class="project-card-arrow">Open demo →</div>
-      </a>
-      <a href="docs/" class="project-card project-card-docs">
-        <div class="project-card-icon">📚</div>
-        <div class="project-card-label">Documentation</div>
-        <div class="project-card-value">Read the docs</div>
-        <div class="project-card-arrow">Open docs →</div>
-      </a>
-      <div class="project-card project-card-hackathon">
-        <div class="project-card-icon">🏆</div>
-        <div class="project-card-label">Built for</div>
-        <div class="project-card-value">Lepton Agents Hackathon</div>
-        <div class="project-card-meta">Track RFB 4 · Streaming & Continuous Payments</div>
-      </div>
-      <div class="project-card project-card-version">
-        <div class="project-card-icon">📦</div>
-        <div class="project-card-label">Version</div>
-        <div class="project-card-value">v0.1.0-termux · v60</div>
-        <div class="project-card-meta">Last updated <span id="last-updated">June 28, 2026</span></div>
-      </div>
-      <div class="project-card project-card-status">
-        <div class="project-card-icon">🟢</div>
-        <div class="project-card-label">Status</div>
-        <div class="project-card-value">Live on Arc testnet</div>
-        <div class="project-card-meta">All systems operational</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- BUILT WITH -->
-  <section class="built-with" id="built-with">
-    <div class="section-header">
-      <div class="section-eyebrow">
-        <span class="eyebrow-dot"></span>
-        Stack
-      </div>
+      <div class="section-eyebrow"><span class="eyebrow-dot"></span>Stack</div>
       <h2 class="section-title">Built with</h2>
       <p class="section-sub">A modern, focused stack. Every choice deliberate.</p>
     </div>
@@ -533,14 +531,14 @@
     </div>
   </section>
 
-  <!-- TRUST BADGES -->
+  <!-- ============================================================ -->
+  <!-- 9. TRUST & CREDIBILITY                                     -->
+  <!-- ============================================================ -->
   <section class="trust">
     <div class="section-header">
-      <div class="section-eyebrow">
-        <span class="eyebrow-dot"></span>
-        Trust
-      </div>
+      <div class="section-eyebrow"><span class="eyebrow-dot"></span>Trust</div>
       <h2 class="section-title">Built right</h2>
+      <p class="section-sub">Production-grade polish. Hackathon-ready quality.</p>
     </div>
     <div class="trust-grid">
       <div class="trust-badge"><span class="trust-icon">🏆</span><span>Built for MiniMax Hackathon</span></div>
@@ -551,6 +549,110 @@
       <div class="trust-badge"><span class="trust-icon">✨</span><span>Modern UI</span></div>
       <div class="trust-badge"><span class="trust-icon">🚀</span><span>Production Ready</span></div>
       <div class="trust-badge"><span class="trust-icon">♿</span><span>Accessible</span></div>
+    </div>
+  </section>
+
+  <!-- Statistics -->
+  <section class="statistics">
+    <div class="section-header">
+      <div class="section-eyebrow"><span class="eyebrow-dot"></span>By the numbers</div>
+      <h2 class="section-title">Production-ready, built to scale</h2>
+    </div>
+    <div class="statistics-grid">
+      <div class="stat-card">
+        <div class="stat-num"><span class="counter" data-target="100">0</span><span class="stat-suffix">%</span></div>
+        <div class="stat-label">Responsive across all devices</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num"><span class="counter" data-target="3">0</span><span class="stat-suffix">s</span></div>
+        <div class="stat-label">Time to first paid tick</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num"><span class="counter" data-target="5042">0</span></div>
+        <div class="stat-label">Arc testnet chain ID</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num"><span class="counter" data-target="6">0</span><span class="stat-suffix">+</span></div>
+        <div class="stat-label">Circle primitives used</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 10. PROJECT INFO / DEMO READINESS                          -->
+  <!-- ============================================================ -->
+  <section class="project-info">
+    <div class="section-header">
+      <div class="section-eyebrow"><span class="eyebrow-dot"></span>Project</div>
+      <h2 class="section-title">Open source & built for the hackathon</h2>
+    </div>
+    <div class="project-grid">
+      <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener" class="project-card project-card-github">
+        <div class="project-card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        </div>
+        <div class="project-card-label">GitHub Repository</div>
+        <div class="project-card-value">Donyemiight/PerStream</div>
+        <div class="project-card-arrow">View source code →</div>
+      </a>
+      <a href="listen.html" class="project-card project-card-demo">
+        <div class="project-card-icon">🚀</div>
+        <div class="project-card-label">Live Demo</div>
+        <div class="project-card-value">Try the streaming demo</div>
+        <div class="project-card-arrow">Open demo →</div>
+      </a>
+      <a href="docs/INSTALLATION.html" class="project-card project-card-docs">
+        <div class="project-card-icon">📚</div>
+        <div class="project-card-label">Documentation</div>
+        <div class="project-card-value">Read the docs</div>
+        <div class="project-card-arrow">Open docs →</div>
+      </a>
+      <div class="project-card project-card-hackathon">
+        <div class="project-card-icon">🏆</div>
+        <div class="project-card-label">Built for</div>
+        <div class="project-card-value">Lepton Agents Hackathon</div>
+        <div class="project-card-meta">Track RFB 4 · Streaming & Continuous Payments</div>
+      </div>
+      <div class="project-card project-card-version">
+        <div class="project-card-icon">📦</div>
+        <div class="project-card-label">Version</div>
+        <div class="project-card-value">v0.1.0-termux · v80</div>
+        <div class="project-card-meta">Last updated <span id="last-updated">June 28, 2026</span></div>
+      </div>
+      <div class="project-card project-card-status">
+        <div class="project-card-icon">🟢</div>
+        <div class="project-card-label">Status</div>
+        <div class="project-card-value">Live on Arc testnet</div>
+        <div class="project-card-meta">All systems operational</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 11. CALL TO ACTION                                         -->
+  <!-- ============================================================ -->
+  <section class="cta-section">
+    <div class="cta-card glass-card">
+      <div class="cta-badge"><span class="badge-dot"></span>Ready to listen?</div>
+      <h2 class="cta-title">Try PerStream now.</h2>
+      <p class="cta-sub">Sign in with any email, deposit $5 testnet USDC, and start streaming. Real on-chain. Real Arcscan. Real seconds.</p>
+      <div class="cta-actions">
+        <a href="listen.html" class="btn btn-primary btn-xl btn-ripple">
+          <span class="btn-content">▶ Try the live demo</span>
+        </a>
+        <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener" class="btn btn-ghost btn-xl">
+          ⭐ Star on GitHub
+        </a>
+      </div>
+      <div class="cta-trust">
+        <span>🔓 MIT licensed</span>
+        <span>·</span>
+        <span>🤖 AI agent ready</span>
+        <span>·</span>
+        <span>📱 Mobile-first</span>
+        <span>·</span>
+        <span>🛠 Production-grade</span>
+      </div>
     </div>
   </section>
 
@@ -571,7 +673,7 @@
             <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener">GitHub ↗</a>
             <a href="listen.html">Live Demo ↗</a>
             <a href="creator.html">For creators ↗</a>
-            <a href="docs/">Documentation ↗</a>
+            <a href="docs/INSTALLATION.html">Documentation ↗</a>
           </div>
           <div class="footer-col">
             <div class="footer-col-title">Resources</div>
@@ -598,7 +700,7 @@
     <button class="back-to-top" id="back-to-top" aria-label="Back to top">↑</button>
   </footer>
 
-  <script src="assets/landing.js?v=70"></script>
+  <script src="assets/landing.js?v=80"></script>
   <script>
     // Animated counters
     function animateCounters() {
@@ -628,12 +730,10 @@
     function fadeInOnScroll() {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('in-view');
-          }
+          if (entry.isIntersecting) entry.target.classList.add('in-view');
         });
       }, { threshold: 0.1 });
-      document.querySelectorAll('.section-header, .how-premium-step, .feature-card, .highlight-card, .stat-card, .verify-card, .track-preview-card, .project-card, .built-with-badge, .trust-badge').forEach(el => {
+      document.querySelectorAll('.section-header, .how-premium-step, .feature-card, .highlight-card, .stat-card, .verify-card, .track-preview-card, .project-card, .built-with-badge, .trust-badge, .problem-card, .benefit-card').forEach(el => {
         el.classList.add('fade-in');
         observer.observe(el);
       });
@@ -657,21 +757,36 @@
       }
     }
 
-    // Page loader sequence
+    // Page loader sequence with AI stages
     function runLoader() {
       const steps = [
-        'Initializing…',
-        'Connecting to Arc…',
-        'Loading episodes…',
-        'Ready'
+        'Initializing AI…',
+        'Understanding your request…',
+        'Analyzing context…',
+        'Running AI reasoning…',
+        'Generating response…',
+        'Finalizing output…',
+        'Ready ✓'
       ];
       const el = document.getElementById('loader-step');
+      const stages = document.querySelectorAll('.loader-stage');
+      const progressBar = document.getElementById('loader-progress-bar');
       let i = 0;
       const tick = () => {
         if (!el) return;
         el.textContent = steps[i];
+        // Activate the corresponding stage
+        if (i < stages.length) {
+          stages.forEach((s, idx) => {
+            if (idx <= i) s.classList.add('active');
+            if (idx < i) s.classList.add('done');
+          });
+        }
+        if (progressBar) {
+          progressBar.style.width = Math.min(100, ((i + 1) / steps.length) * 100) + '%';
+        }
         i++;
-        if (i < steps.length) setTimeout(tick, 350);
+        if (i < steps.length) setTimeout(tick, 320);
       };
       tick();
     }
@@ -696,7 +811,7 @@
       }
     }
 
-    // Smooth scroll for in-page anchors
+    // Smooth scroll
     function setupSmoothScroll() {
       document.querySelectorAll('a[href^="#"]').forEach(a => {
         a.addEventListener('click', (e) => {
@@ -709,7 +824,7 @@
       });
     }
 
-    // Ripple effect on .btn-ripple
+    // Ripple effect
     function setupRipple() {
       document.querySelectorAll('.btn-ripple').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -755,7 +870,7 @@
       setLastUpdated();
     }
     window.addEventListener('load', hideLoader);
-    setTimeout(hideLoader, 4000); // Failsafe
+    setTimeout(hideLoader, 5000);
   </script>
 </body>
 </html>
