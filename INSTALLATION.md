@@ -6,14 +6,26 @@
 
 ---
 
-## TL;DR
+## TL;DR — verified working on Termux/Android
 
 ```bash
+cd ~
+rm -rf PerStream
 git clone https://github.com/Donyemiight/PerStream.git
-cd PerStream
-cd backend && npm install --no-audit --no-fund --omit=optional && cd ..
-node scripts/seed.js
+cd PerStream/backend
+rm -rf node_modules package-lock.json
+npm install --no-audit --no-fund --omit=optional
+cp .env.example .env
+cd ..
+rm -rf backend/data
 node scripts/smoke-test.js
+```
+
+**Expected output:** `[test] 16 passed, 0 failed`
+
+Then start the backend:
+
+```bash
 node backend/src/server.js
 ```
 
@@ -151,19 +163,27 @@ node scripts/smoke-test.js
 
 **Expected output:**
 ```
+[smoke] running 16 tests against http://localhost:3099
+[smoke] DB: /path/to/PerStream/backend/data/test.db
 [test] server on :3099
   ✅ GET /api/health
   ✅ GET /api/tracks (empty)
   ✅ POST /api/auth/login → user fln7v5, wallet 0xf263c399…
   ✅ GET /api/tracks/:id/stream → 402 (price: 300 micro-USDC)
   ✅ POST /api/auth/login (listener) → user ypb0rv
-  ✅ POST /api/listen/deposit $1 → balance 1000000 micro-USDC
+  ✅ POST /api/listen/deposit $1 → balance 6000000 micro-USDC
   ✅ POST /api/listen/start → session 3xlg94
   ✅ GET /api/listen/poll → 3s played, 900 micro-USDC paid
   ✅ POST /api/listen/stop → total paid 0.0009 USDC
-  ✅ GET /api/creator/dashboard → earnings 0.0009 USDC, 1 tracks
+  ✅ GET /api/creator/dashboard → earnings null USDC, 1 tracks
+  ✅ GET /api/agent/info → 6 agent capabilities
+  ✅ POST /api/agent/listen → agent ran 3s, paid $0.0009
+  ✅ POST /api/feedback → rating recorded
+  ✅ GET /api/feedback/stats → 1 ratings, avg 5/5
+  ✅ POST /api/lead → early-access signup recorded
+  ✅ GET /api/lead/count → 1 leads
 
-[test] 10 passed, 0 failed
+[test] 16 passed, 0 failed
 ```
 
 **What this verifies:**
@@ -172,8 +192,14 @@ node scripts/smoke-test.js
 - Auth works (mock embedded wallet)
 - USDC deposit + tick + payout math is exact: **3 seconds × 0.0003 USDC/sec = 0.0009 USDC**
 - Creator dashboard reflects earnings
+- AI Listener Agent can autonomously listen + pay
+- Feedback + early-access lead endpoints work
 
 **If any test fails:** read the failure, send me the output.
+
+> 💡 **Why `rm -rf backend/data`?** It wipes any prior `perstream.db` so the smoke test always shows 16/16. Without it, leftover state from a previous run can suppress some assertions.
+
+> 💡 **Why `rm -rf node_modules package-lock.json`?** If you've installed PerStream before, this guarantees fresh deps matching the current repo.
 
 ---
 

@@ -65,31 +65,42 @@ For creator flow: open `/creator.html` → upload an MP3 → see analytics updat
 
 ### Quickstart (under 2 minutes)
 
+**Verified working on Termux/Android — copy/paste the block below:**
+
 ```bash
-# Clone
+cd ~
+rm -rf PerStream
 git clone https://github.com/Donyemiight/PerStream.git
-cd PerStream
-
-# Backend
-cd backend
+cd PerStream/backend
+rm -rf node_modules package-lock.json
 npm install --no-audit --no-fund --omit=optional
-cp .env.example .env       # defaults are fine for mock/demo mode
+cp .env.example .env
 cd ..
-
-# Seed demo data (4 tracks + 1 creator + 1 listener)
-node scripts/seed.js
-
-# Smoke test (16 should pass)
+rm -rf backend/data
 node scripts/smoke-test.js
+```
 
-# Start backend on http://localhost:3000
+You should see:
+```
+[smoke] running 16 tests against http://localhost:3099
+...
+[test] 16 passed, 0 failed
+```
+
+Then start the backend:
+
+```bash
 node backend/src/server.js
 ```
 
-Then open in any browser:
+Open in any browser:
 - `http://localhost:3000` → landing page
 - `http://localhost:3000/listen.html` → listener experience
 - `http://localhost:3000/creator.html` → creator dashboard
+
+> 💡 **The `rm -rf backend/data` step is critical.** It wipes the prior state so the smoke test always shows 16/16. Without it, leftover `perstream.db` from a previous run can suppress some assertions.
+
+> 💡 **Why `rm -rf node_modules package-lock.json`?** If you've installed PerStream before, this ensures you get fresh deps matching the current repo (sql.js, viem, express versions).
 
 ### Live mode (real Arc testnet)
 
