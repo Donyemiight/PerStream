@@ -1,72 +1,83 @@
 /**
- * Tunnel discovery — when the deployed tunnel URL changes (sandbox restart),
- * the frontend can probe known-good URLs and switch automatically.
+ * Tunnel discovery — robust against any backend URL change.
+ *
+ * Strategy:
+ *  1. Use window.PERSTREAM_API if set and reachable
+ *  2. Probe known tunnel URLs in priority order
+ *  3. Check localStorage for last-known-good
+ *  4. Try same-origin (when served from the same Node.js backend)
+ *  5. Try localhost:3000 (when running locally)
+ *  6. Fall back to a "demo mode" that simulates the backend in-browser
  */
 (function() {
   'use strict';
   
+  // All tunnels we know about, newest first
   const KNOWN_TUNNELS = [
+    'https://monica-ruby-educational-aurora.trycloudflare.com',
     'https://welfare-match-katrina-awesome.trycloudflare.com',
     'https://label-musicians-addition-armed.trycloudflare.com',
     'https://boundaries-participation-mail-pets.trycloudflare.com',
   ];
   
-  async function probe(baseUrl) {
+  const LOCAL_FALLBACKS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+  ];
+  
+  // Get any tunnel URL from the page (set by the host HTML)
+  const injectedUrl = (typeof window !== 'undefined' && window.PERSTREAM_API) || null;
+  
+  async function probe(baseUrl, timeoutMs = 2500) {
     try {
-      const r = await fetch(baseUrl + '/api/health', { method: 'GET', cache: 'no-store' });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const r = await fetch(baseUrl + '/api/health', {
+        method: 'GET',
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
       if (r.ok) {
         const d = await r.json();
-        return d.ok;
+        if (d.ok) return baseUrl;
       }
     } catch {}
-    return false;
+    return null;
   }
   
   async function discover() {
-    // 1) Use the configured PERSTREAM_API first
-    if (window.PERSTREAM_API) {
-      const ok = await probe(window.PERSTREAM_API);
-      if (ok) return window.PERSTREAM_API;
-      console.warn('[tunnel-discovery] configured URL failed:', window.PERSTREAM_API);
+    const candidates = [];
+    if (injectedUrl) candidates.push(injectedUrl);
+    const lastKnown = (typeof localStorage !== 'undefined') ? localStorage.getItem('perstream_known_tunnel') : null;
+    if (lastKnown && !candidates.includes(lastKnown)) candidates.push(lastKnown);
+    candidates.push(...KNOWN_TUNNELS);
+    // Same-origin check (when served from Node.js backend)
+    if (typeof window !== 'undefined' && window.location) {
+      candidates.push(window.location.origin);
     }
+    candidates.push(...LOCAL_FALLBACKS);
     
-    // 2) Try last-known good tunnel from localStorage
-    const lastKnown = localStorage.getItem('perstream_known_tunnel');
-    if (lastKnown) {
-      const ok = await probe(lastKnown);
-      if (ok) {
-        console.log('[tunnel-discovery] recovered via last-known tunnel:', lastKnown);
-        return lastKnown;
-      }
-    }
-    
-    // 3) Probe known tunnels
-    for (const url of KNOWN_TUNNELS) {
+    for (const url of candidates) {
+      if (!url || url === 'null' || url === 'undefined') continue;
       const ok = await probe(url);
       if (ok) {
-        console.log('[tunnel-discovery] found working tunnel:', url);
-        return url;
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('perstream_known_tunnel', ok);
+        }
+        if (typeof window !== 'undefined') {
+          window.PERSTREAM_API = ok;
+        }
+        console.log('[tunnel-discovery] using', ok);
+        return ok;
       }
     }
-    
-    // 4) Last resort — return same-origin
-    return window.location.origin;
+    // No backend found — return null so the caller can decide to use demo mode
+    console.warn('[tunnel-discovery] no backend reachable');
+    return null;
   }
   
-  // Run discovery on load if PERSTREAM_API is set or fails
   if (typeof window !== 'undefined') {
     window.discoverTunnel = discover;
-    
-    // Auto-recover: if PERSTREAM_API fails for any request, re-discover
-    window.addEventListener('perstream:tunnel-broken', async (e) => {
-      console.warn('[tunnel-discovery] tunnel-broken event — re-discovering');
-      const newUrl = await discover();
-      if (newUrl !== window.PERSTREAM_API) {
-        window.PERSTREAM_API = newUrl;
-        localStorage.setItem('perstream_known_tunnel', newUrl);
-        // Reload to apply
-        location.reload();
-      }
-    });
   }
 })();

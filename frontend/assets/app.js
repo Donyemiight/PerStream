@@ -112,7 +112,11 @@ const PerStream = (() => {
 
   // ─── Listen page ───
 
+  let _initListenPageRan = false;
   async function initListenPage() {
+    // Guard against double-init when DOMContentLoaded and setTimeout(0) both fire
+    if (_initListenPageRan) return;
+    _initListenPageRan = true;
     loadUser();
     setupAuthBar('listen');
     // Wire up deposit buttons IMMEDIATELY so users can deposit before selecting a track
@@ -300,6 +304,27 @@ const PerStream = (() => {
 
     const startMeter = async () => {
       if (meterRunning) return;
+
+      // PAYMENT GATE — refuse to start unless the user has funded the session.
+      // Reads the displayed balance (which we keep in sync with /api/listen/balance
+      // via refreshBalance()). Anything <= 0 means no deposit yet.
+      const balanceText = document.getElementById('stat-balance')?.textContent || '0';
+      const balanceMicro = parseFloat(balanceText) || 0;
+      if (balanceMicro <= 0) {
+        showToast('Deposit USDC before starting playback', 'error');
+        showError('Deposit at least $0.01 USDC before pressing Start Streaming.');
+        // Visually nudge the deposit buttons
+        const dep = document.getElementById('btn-deposit');
+        const depBig = document.getElementById('btn-deposit-big');
+        if (dep) dep.classList.add('btn-pulse');
+        if (depBig) depBig.classList.add('btn-pulse');
+        setTimeout(() => {
+          if (dep) dep.classList.remove('btn-pulse');
+          if (depBig) depBig.classList.remove('btn-pulse');
+        }, 3000);
+        return;
+      }
+
       meterRunning = true;
       document.getElementById('stat-status').textContent = 'Streaming — paying per second';
 
