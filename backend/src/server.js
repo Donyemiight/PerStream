@@ -412,7 +412,7 @@ app.post('/api/listen/stop', authMiddleware, async (req, res) => {
 
 // Public poll endpoint — lets the frontend tick its display once per second
 // without needing auth (the meter runs server-side).
-app.get('/api/listen/poll', (req, res) => {
+app.get('/api/listen/poll', async (req, res) => {
   const { sessionId } = req.query;
   if (!sessionId) return res.status(400).json({ error: 'session_id_required' });
 
@@ -421,7 +421,7 @@ app.get('/api/listen/poll', (req, res) => {
 
   // Get creator's wallet to compute listener's remaining balance via mock ledger
   const creator = db.getUser(session.creator_id);
-  const balance = arc.getListenerBalance(
+  const balance = await arc.getListenerBalance(
     db.getUser(session.listener_id)?.wallet || ''
   );
 
@@ -447,6 +447,22 @@ app.post('/api/listen/deposit', authMiddleware, async (req, res) => {
   });
 
   res.json(result);
+});
+
+// Authoritative balance lookup — frontend should ALWAYS fetch this
+// on page load and after each deposit so display never goes out of sync.
+app.get('/api/listen/balance', authMiddleware, async (req, res) => {
+  try {
+    const balanceMicroUsdc = await arc.getListenerBalance(req.user.wallet);
+    res.json({
+      ok: true,
+      balance: balanceMicroUsdc,
+      balanceUsd: arc.microToUsd(balanceMicroUsdc),
+    });
+  } catch (err) {
+    console.error('balance lookup error:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ─── Creator dashboard ───
@@ -643,7 +659,7 @@ app.post('/api/creator/tracks', authMiddleware, upload.single('audio'), (req, re
     const status = req.body.status || req.query.status || 'published';
     if (!title) return res.status(400).json({ error: 'title_required' });
     const price = parseInt(pricePerSec, 10) || 100;
-    const audioUrl = req.file ? `/assets/audio/${req.file.filename}` : (req.body.audioUrl || '/assets/loop.mp3');
+    const audioUrl = req.file ? `/api/tracks/audio/${req.file.filename}` : (req.body.audioUrl || '/assets/loop.mp3');
     const coverUrl = req.body.coverUrl || '';
     const dur = parseInt(durationSec, 10) || 30;
     const track = db.createTrack({

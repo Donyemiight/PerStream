@@ -103,7 +103,22 @@ const PerStream = (() => {
   async function initListenPage() {
     loadUser();
     setupAuthBar('listen');
+    if (currentUser) {
+      await refreshBalance();
+    }
     await loadTracks();
+  }
+
+  // Always fetch fresh balance from server (single source of truth).
+  // Called on page load and after every deposit.
+  async function refreshBalance() {
+    try {
+      const r = await authedFetch('/api/listen/balance');
+      if (r.ok) {
+        const data = await r.json();
+        document.getElementById('stat-balance').textContent = formatUsdc(data.balance);
+      }
+    } catch {}
   }
 
   async function loadTracks() {
@@ -230,28 +245,39 @@ const PerStream = (() => {
         if (r.ok) {
           const data = await r.json();
           meterSessionId = data.sessionId;
+          // Pull authoritative balance immediately
+          if (typeof data.balanceMicroUsdc === 'number') {
+            document.getElementById('stat-balance').textContent = formatUsdc(data.balanceMicroUsdc);
+          }
         }
       } catch {}
 
-      meterInterval = setInterval(() => {
-        meterSeconds += 1;
-        const pricePerSec = track.price_per_sec || 100;
-        const totalPaid = meterSeconds * pricePerSec;
-        const currentBalanceMicro = parseUsdc(document.getElementById('stat-balance').textContent);
-        const newBalance = Math.max(0, currentBalanceMicro - pricePerSec);
-        if (newBalance <= 0) {
-          stopMeter();
-          document.getElementById('stat-status').textContent = 'Balance empty — deposit to continue';
-          return;
-        }
-        document.getElementById('stat-seconds').textContent = meterSeconds;
-        document.getElementById('tick-value').textContent = formatUsdc(totalPaid);
-        document.getElementById('stat-balance').textContent = formatUsdc(newBalance);
-      }, 1000);
+      // Drive UI from server-authoritative polls (1100ms) so balance is always exact.
+      // Stop the local-math setInterval and let the poll be the only writer.
+      meterInterval = setInterval(async () => {
+        try {
+          const r = await authedFetch(`/api/listen/poll?sessionId=${meterSessionId}`);
+          if (r.ok) {
+            const data = await r.json();
+            if (data.tick) {
+              meterSeconds = data.secondsPlayed || meterSeconds + 1;
+              document.getElementById('stat-seconds').textContent = meterSeconds;
+              document.getElementById('tick-value').textContent = formatUsdc(data.amountPaid);
+              document.getElementById('stat-balance').textContent = formatUsdc(data.balance);
+              if (data.balance <= 0) {
+                stopMeter();
+                document.getElementById('stat-status').textContent = 'Balance empty — deposit to continue';
+              }
+            }
+          }
+        } catch {}
+      }, 1100);
 
       // Try to start the audio too (silent WAV in demo) — fire and forget
       audio.play().catch(() => {});
     };
+
+    // Local tick is now handled via server poll above; legacy local-math removed.
 
     const stopMeter = async () => {
       if (!meterRunning) return;
@@ -314,6 +340,8 @@ const PerStream = (() => {
       }
       const balanceMicro = data.balance;
       document.getElementById('stat-balance').textContent = formatUsdc(balanceMicro);
+      // Also re-fetch to guarantee server-authoritative balance
+      refreshBalance();
       // Flash success
       const status = document.getElementById('stat-status');
       const prev = status.textContent;
