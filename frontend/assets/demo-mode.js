@@ -49,12 +49,16 @@
     { id: 'demo-listener', handle: 'demo-listener', email: 'demo-listener@perstream.fm', wallet: '0xe6737b1cb6cdbc484fd11d658e664835a7673e46', role: 'listener' },
   ];
 
+  // Track catalog — SINGLE SOURCE OF TRUTH shared by index.html (static), listen.html,
+  // creator.html, and any demo-mode API responses. TITLES + PRICES + PLAY COUNTS must be IDENTICAL across pages.
   const SEED_TRACKS = [
-    { id: 'trk-podcast', creator_id: 'demo-creator', title: 'Ep. 1: The Cold-Start Cliff — why per-second beats subscriptions', description: 'A full 4-minute 16-second podcast episode. How subscription media kills 90% of new shows, and how a per-second model flips the economics. Press play and let the meter run.', audioUrl: 'assets/podcast-full.mp3', duration_sec: 256, price_per_sec: 100, plays: 89, earnings_total: 2278400 },
-    { id: 'trk-welcome', creator_id: 'demo-creator', title: 'PerStream Theme — 26-second welcome', description: 'A short welcome message. Use this to feel the per-second tick without committing time.', audioUrl: 'assets/welcome.mp3', duration_sec: 26, price_per_sec: 300, plays: 142, earnings_total: 4260000 },
-    { id: 'trk-pitch', creator_id: 'demo-creator', title: 'Pitch: why pay per second?', description: 'A 25-second pitch explaining why your balance should only tick while audio plays.', audioUrl: 'assets/pitch.mp3', duration_sec: 25, price_per_sec: 500, plays: 89, earnings_total: 8910000 },
-    { id: 'trk-loop', creator_id: 'demo-creator', title: 'Demo Loop — 17-second spoken test track', description: 'Press play, watch the meter tick, pause to stop. The whole point of PerStream in 17 seconds.', audioUrl: 'assets/loop.mp3', duration_sec: 17, price_per_sec: 100, plays: 256, earnings_total: 1280000 },
+    { id: 'trk-podcast', creator_id: 'demo-creator', title: 'Cold-Start Cliff — full episode', description: "The story behind how Circle's Arc testnet hit 1M txns in a week.", audioUrl: 'assets/podcast-full.mp3', duration_sec: 256, price_per_sec: 100, plays: 261, earnings_total: 6681600 },
+    { id: 'trk-welcome', creator_id: 'demo-creator', title: 'PerStream Theme — welcome', description: 'A 26-second welcome message. Shortest possible listen.', audioUrl: 'assets/welcome.mp3', duration_sec: 26, price_per_sec: 300, plays: 142, earnings_total: 1107600 },
+    { id: 'trk-pitch', creator_id: 'demo-creator', title: 'Pitch: why pay per second?', description: 'Why your balance should only tick while audio plays.', audioUrl: 'assets/pitch.mp3', duration_sec: 25, price_per_sec: 500, plays: 89, earnings_total: 1112500 },
+    { id: 'trk-loop', creator_id: 'demo-creator', title: 'Demo Loop — spoken test', description: 'The whole point of PerStream in 17 seconds.', audioUrl: 'assets/loop.mp3', duration_sec: 17, price_per_sec: 100, plays: 256, earnings_total: 435200 },
   ];
+  // Expose to other scripts so static HTML can mirror EXACT same data
+  window.PERSTREAM_DEMO_TRACKS = SEED_TRACKS;
 
   // Persistence helpers — uploaded tracks + withdrawals survive page refresh
   const STORAGE_KEY = 'perstream_demo_state';

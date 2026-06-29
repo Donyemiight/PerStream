@@ -1876,6 +1876,26 @@ a:focus-visible, button:focus-visible {
 }
 .topbar-link:hover { color: var(--accent); }
 
+/* Demo mode pill — shows in topbar after 2s if backend is offline (FIX 1) */
+.demo-pill {
+  display: inline-block;
+  background: rgba(251, 191, 36, 0.16);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+/* Plain contact line in footer (FIX 6) */
+.footer-contact-text {
+  color: var(--text-dim, #8b8b9a);
+  font-size: 13px;
+}
+
 /* Logo badge */
 .logo-badge {
   display: inline-block;
