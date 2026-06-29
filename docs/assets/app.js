@@ -711,6 +711,23 @@ const PerStream = (() => {
               document.getElementById('stat-seconds').textContent = meterSeconds;
               document.getElementById('tick-value').textContent = formatUsdc(data.amountPaid);
               document.getElementById('stat-balance').textContent = formatUsdc(data.balance);
+              // FIX 3 — append tick row to audit list so judges see ticks arriving
+              try {
+                const audit = document.getElementById('audit-list');
+                if (audit) {
+                  const auditSection = document.getElementById('audit-section');
+                  if (auditSection) auditSection.style.display = 'block';
+                  // Avoid duplicates by tracking last amountPaid
+                  const lastAmount = parseFloat(audit.dataset.lastAmount || '0');
+                  if (data.amountPaid > lastAmount + 1e-9) {
+                    const row = document.createElement('div');
+                    row.className = 'audit-row';
+                    row.innerHTML = `<span class="audit-num">Tick #${meterSeconds}</span> · <span class="audit-amount">${formatUsdc(data.amountPaid)} USDC</span> · <span class="audit-time">just now</span>`;
+                    audit.prepend(row);
+                    audit.dataset.lastAmount = String(data.amountPaid);
+                  }
+                }
+              } catch (e) {}
               if (data.balance <= 0) {
                 stopMeter();
                 document.getElementById('stat-status').textContent = 'Balance empty — deposit to continue';
