@@ -1,6 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<style id="perstream-hide-watermark">
+  /* Hide the platform-injected minimax floating ball */
+  #minimax-floating-ball,
+  .minimax-floating-ball,
+  [id*="minimax" i],
+  [class*="minimax" i] { display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }
+</style>
+<script>
+  // Aggressively remove the watermark element as soon as it appears
+  (function() {
+    function remove() {
+      document.querySelectorAll('[id*="minimax" i], [class*="minimax" i], #minimax-floating-ball').forEach(function(el) {
+        try { el.remove(); } catch (e) { el.style.display = 'none'; }
+      });
+    }
+    // Run now and on every DOM mutation
+    remove();
+    if (document.body) {
+      var obs = new MutationObserver(remove);
+      obs.observe(document.documentElement, { childList: true, subtree: true });
+      // Stop after 30s (defensive)
+      setTimeout(function() { obs.disconnect(); }, 30000);
+    }
+  })();
+</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PerStream — Pay per second. Listen on demand.</title>
