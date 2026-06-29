@@ -19,7 +19,7 @@ node scripts/smoke-test.js
 
 **Expected output:**
 ```
-[smoke] running 16 tests against http://localhost:3099
+[smoke] running 21 tests against http://localhost:3099
 [smoke] DB: .../backend/data/test.db
 ...
   ✅ GET /api/health
@@ -39,7 +39,7 @@ node scripts/smoke-test.js
   ✅ POST /api/lead → early-access signup recorded
   ✅ GET /api/lead/count → 1 leads
 
-[test] 16 passed, 0 failed
+[test] 21 passed, 0 failed
 ```
 
 ## Then start the backend
@@ -63,7 +63,7 @@ Open in any browser:
 | `rm -rf node_modules package-lock.json` | Force fresh dep install matching current repo |
 | `npm install --no-audit --no-fund --omit=optional` | Skips optional deps (Termux safety), no audit noise |
 | `cp .env.example .env` | Defaults are fine for mock mode |
-| `rm -rf backend/data` | Wipes leftover DB state — smoke test always shows 16/16 |
+| `rm -rf backend/data` | Wipes leftover DB state — smoke test always shows 21/21 |
 | `node scripts/smoke-test.js` | Verifies everything works before you start the server |
 
 ## What each test does
@@ -110,7 +110,7 @@ See [`docs/LIVE_DEPLOY.md`](docs/LIVE_DEPLOY.md). You'll need:
 
 ## Troubleshooting
 
-**Smoke test shows fewer than 16 passed?**
+**Smoke test shows fewer than 21 passed?**
 
 Run the full sequence above starting from `rm -rf PerStream`. The state from prior runs (especially `backend/data/perstream.db`) can interfere.
 

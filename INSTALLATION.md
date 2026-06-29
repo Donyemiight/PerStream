@@ -21,7 +21,7 @@ rm -rf backend/data
 node scripts/smoke-test.js
 ```
 
-**Expected output:** `[test] 16 passed, 0 failed`
+**Expected output:** `[test] 21 passed, 0 failed`
 
 Then start the backend:
 
@@ -163,7 +163,7 @@ node scripts/smoke-test.js
 
 **Expected output:**
 ```
-[smoke] running 16 tests against http://localhost:3099
+[smoke] running 21 tests against http://localhost:3099
 [smoke] DB: /path/to/PerStream/backend/data/test.db
 [test] server on :3099
   ✅ GET /api/health
@@ -183,7 +183,7 @@ node scripts/smoke-test.js
   ✅ POST /api/lead → early-access signup recorded
   ✅ GET /api/lead/count → 1 leads
 
-[test] 16 passed, 0 failed
+[test] 21 passed, 0 failed
 ```
 
 **What this verifies:**
@@ -197,7 +197,7 @@ node scripts/smoke-test.js
 
 **If any test fails:** read the failure, send me the output.
 
-> 💡 **Why `rm -rf backend/data`?** It wipes any prior `perstream.db` so the smoke test always shows 16/16. Without it, leftover state from a previous run can suppress some assertions.
+> 💡 **Why `rm -rf backend/data`?** It wipes any prior `perstream.db` so the smoke test always shows 21/21. Without it, leftover state from a previous run can suppress some assertions.
 
 > 💡 **Why `rm -rf node_modules package-lock.json`?** If you've installed PerStream before, this guarantees fresh deps matching the current repo.
 

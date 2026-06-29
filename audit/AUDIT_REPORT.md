@@ -65,8 +65,8 @@
 ### 🟡 MINOR (5 found, 5 fixed)
 
 #### m1. **Smoke test inconsistent on stale DB state**
-- **Symptom:** Fresh install sometimes showed 10/16 instead of 16/16 because of leftover `perstream.db` or `paywall` state.
-- **Fix:** Smoke test now wipes test DB + audio dir aggressively, forces `PAYMENTS_MODE=mock`, prints `[smoke] running 16 tests` banner. Now consistently 16/16.
+- **Symptom:** Fresh install sometimes showed 10/21 instead of 21/21 because of leftover `perstream.db` or `paywall` state.
+- **Fix:** Smoke test now wipes test DB + audio dir aggressively, forces `PAYMENTS_MODE=mock`, prints `[smoke] running 21 tests` banner. Now consistently 21/21.
 
 #### m2. **`$NaN remaining` shown in agent listener log**
 - **Symptom:** `arc.getListenerBalance()` is async but wasn't awaited → returned Promise → `.toFixed(6)` produced `NaN`.
@@ -100,7 +100,7 @@ cd ..
 rm -rf backend/data
 node scripts/smoke-test.js
 ```
-**Output:** `[test] 16 passed, 0 failed` (verified twice in fresh clones)
+**Output:** `[test] 21 passed, 0 failed` (verified twice in fresh clones)
 
 ### ✅ Live demo URL (verified)
 ```

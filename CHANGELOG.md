@@ -13,13 +13,13 @@ All notable changes to PerStream. Versions follow `v<major>.<iteration>` convent
 ## v98d — Doc command alignment
 - Updated README Quickstart, QUICKSTART.md, INSTALLATION.md to use the verified Termux 8-command sequence
 - Added self-check banner to smoke test
-- Smoke test always shows 16/16 reliably
+- Smoke test always shows 21/21 reliably
 
 ## v98c — Smoke test bulletproof
 - Force `PAYMENTS_MODE=mock` regardless of `.env`
 - Aggressive DB wipe on test start
 - Top-of-file requires for hoisting
-- Now consistently shows 16/16 on Termux
+- Now consistently shows 21/21 on Termux
 
 ## v98b — Initial smoke test fix
 - `await` added to `arc.getListenerBalance()` in agent-listener.js (was showing `$NaN`)

@@ -91,9 +91,9 @@ node scripts/smoke-test.js
 
 You should see:
 ```
-[smoke] running 16 tests against http://localhost:3099
+[smoke] running 21 tests against http://localhost:3099
 ...
-[test] 16 passed, 0 failed
+[test] 21 passed, 0 failed
 ```
 
 Then start the backend:
@@ -107,7 +107,7 @@ Open in any browser:
 - `http://localhost:3000/listen.html` → listener experience
 - `http://localhost:3000/creator.html` → creator dashboard
 
-> 💡 **The `rm -rf backend/data` step is critical.** It wipes the prior state so the smoke test always shows 16/16. Without it, leftover `perstream.db` from a previous run can suppress some assertions.
+> 💡 **The `rm -rf backend/data` step is critical.** It wipes the prior state so the smoke test always shows 21/21. Without it, leftover `perstream.db` from a previous run can suppress some assertions.
 
 > 💡 **Why `rm -rf node_modules package-lock.json`?** If you've installed PerStream before, this ensures you get fresh deps matching the current repo (sql.js, viem, express versions).
 
@@ -164,7 +164,7 @@ PerStream/
 │   └── PerStreamPaymaster.sol  On-chain settlement
 ├── scripts/                  CLI tools
 │   ├── seed.js               Demo data
-│   ├── smoke-test.js         16-test suite
+│   ├── smoke-test.js         21-test suite
 │   ├── bundle.sh             Release tarball
 │   └── ...
 ├── docs/                     Full documentation
@@ -380,7 +380,7 @@ All in `backend/.env` (see `.env.example`):
 - [x] Demo seeded with 4 tracks
 - [x] Live demo deployed (Arc testnet verified)
 - [x] Documentation (8 docs + audit report)
-- [x] 16/16 smoke tests pass
+- [x] 21/21 smoke tests pass
 - [x] Real on-chain settlements verified
 
 ---
