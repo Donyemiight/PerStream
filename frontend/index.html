@@ -118,7 +118,7 @@
           </div>
           <div class="hero-trust-item">
             <span class="hero-trust-dot"></span>
-            <span>Real on-chain USDC</span>
+            <span>Simulated or live USDC</span>
           </div>
           <div class="hero-trust-item">
             <span class="hero-trust-dot"></span>
@@ -163,22 +163,22 @@
     <!-- Animated stats bar -->
     <div class="hero-stats glass-card">
       <div class="hero-stat">
-        <div class="hero-stat-num" id="stat-ticks">427</div>
+        <div class="hero-stat-num" id="stat-ticks">—</div>
         <div class="hero-stat-label">Ticks streamed</div>
       </div>
       <div class="hero-stat-divider"></div>
       <div class="hero-stat">
-        <div class="hero-stat-num" id="stat-paid">$0.0638</div>
+        <div class="hero-stat-num" id="stat-paid">—</div>
         <div class="hero-stat-label">USDC streamed</div>
       </div>
       <div class="hero-stat-divider"></div>
       <div class="hero-stat">
-        <div class="hero-stat-num" id="stat-tx">12</div>
+        <div class="hero-stat-num" id="stat-tx">—</div>
         <div class="hero-stat-label">On-chain txs</div>
       </div>
       <div class="hero-stat-divider"></div>
       <div class="hero-stat">
-        <div class="hero-stat-num" id="stat-tracks">4</div>
+        <div class="hero-stat-num" id="stat-tracks">—</div>
         <div class="hero-stat-label">Episodes live</div>
       </div>
     </div>
@@ -224,7 +224,7 @@
     <div class="section-header">
       <div class="section-eyebrow"><span class="eyebrow-dot"></span>The solution</div>
       <h2 class="section-title">Pay for seconds. Earn from seconds.</h2>
-      <p class="section-sub">PerStream is the world's first per-second USDC streaming paywall. It uses Circle Nanopayments and Arc testnet to settle <strong>real on-chain USDC</strong> every second audio plays.</p>
+      <p class="section-sub">PerStream is the world's first per-second USDC streaming paywall. It uses Circle Nanopayments and Arc testnet to settle USDC every second audio plays. <strong>Default deployment: simulated ledger for the demo. Switch to <code>PAYMENTS_MODE=live</code> for real on-chain USDC.</strong></p>
     </div>
     <div class="solution-card glass-card">
       <div class="solution-flow">
@@ -418,7 +418,7 @@
   <section class="verify">
     <div class="section-header">
       <div class="section-eyebrow"><span class="eyebrow-dot"></span>On-chain proof</div>
-      <h2 class="section-title">Real on-chain. Real USDC. Real Arcscan.</h2>
+      <h2 class="section-title">Real engine. Two modes.</h2>
       <p class="section-sub">Every PerStream payment settles on <a href="https://testnet.arcscan.app" target="_blank" rel="noopener" class="inline-link">Arc testnet</a> via the Circle GatewayMinter contract. Click any address to verify.</p>
     </div>
     <div class="verify-grid">
@@ -440,6 +440,42 @@
         <div class="verify-meta">Receives all batched settlements</div>
         <div class="verify-arrow">View on Arcscan →</div>
       </a>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 7b. AI LISTENER AGENT                                       -->
+  <!-- ============================================================ -->
+  <section class="ai-agent-section" id="ai-agent">
+    <div class="section-header">
+      <div class="section-eyebrow"><span class="eyebrow-dot"></span>Autonomous agent</div>
+      <h2 class="section-title">An AI agent that pays to listen</h2>
+      <p class="section-sub">Most demos stop at "user clicks play". PerStream goes further — the platform itself has an AI listener agent that subscribes, streams, and rates episodes on its own budget. Agentic commerce, end-to-end.</p>
+    </div>
+    <div class="ai-agent-grid">
+      <div class="ai-agent-card glass-card">
+        <div class="ai-agent-icon">🤖</div>
+        <h3>AI Listening Session</h3>
+        <p>The agent discovers tracks, signs in with its own embedded Arc wallet, deposits a budget, and streams autonomously. Each tick charges the agent's wallet in micro-USDC.</p>
+        <div class="ai-agent-cta-row">
+          <a href="listen.html" class="btn btn-primary btn-sm">Try AI listener on the player →</a>
+        </div>
+      </div>
+      <div class="ai-agent-card glass-card">
+        <div class="ai-agent-icon">📡</div>
+        <h3>Live agent telemetry</h3>
+        <p>When the agent is running, you see its status, current session, active payment meter, USDC spent, and the creator earnings it just generated.</p>
+        <ul class="ai-agent-list">
+          <li><strong>Status:</strong> idle · listening · reviewing</li>
+          <li><strong>Budget:</strong> $1 – $5 per session</li>
+          <li><strong>Ticks:</strong> real on-chain settlement every second</li>
+        </ul>
+      </div>
+      <div class="ai-agent-card glass-card">
+        <div class="ai-agent-icon">⚙️</div>
+        <h3>Two API modes</h3>
+        <p>Interactive: <code>POST /api/agent/listen</code> with trackId + budget. Autonomous: <code>POST /api/agent/auto</code> lets the agent discover, listen, rate, and repeat. Both return a transcript of every tick.</p>
+      </div>
     </div>
   </section>
 
@@ -536,7 +572,7 @@
       </div>
       <div class="built-with-badge">
         <div class="built-with-icon">🤖</div>
-        <div class="built-with-name">MiniMax</div>
+        <div class="built-with-name">Oluyemi (@donyemiight)</div>
         <div class="built-with-desc">AI co-development</div>
       </div>
     </div>
@@ -552,7 +588,7 @@
       <p class="section-sub">Production-grade polish. Hackathon-ready quality.</p>
     </div>
     <div class="trust-grid">
-      <div class="trust-badge"><span class="trust-icon">🏆</span><span>Built for MiniMax Hackathon</span></div>
+      <div class="trust-badge"><span class="trust-icon">🏆</span><span>Built for Lepton Agents Hackathon</span></div>
       <div class="trust-badge"><span class="trust-icon">🤖</span><span>AI Powered</span></div>
       <div class="trust-badge"><span class="trust-icon">🔓</span><span>Open Source</span></div>
       <div class="trust-badge"><span class="trust-icon">⚡</span><span>Fast Performance</span></div>
@@ -571,19 +607,19 @@
     </div>
     <div class="statistics-grid">
       <div class="stat-card">
-        <div class="stat-num"><span class="counter" data-target="100">0</span><span class="stat-suffix">%</span></div>
+        <div class="stat-num"><span class="counter" data-target="100" data-display="100">100</span><span class="stat-suffix">%</span></div>
         <div class="stat-label">Responsive across all devices</div>
       </div>
       <div class="stat-card">
-        <div class="stat-num"><span class="counter" data-target="3">0</span><span class="stat-suffix">s</span></div>
+        <div class="stat-num"><span class="counter" data-target="1" data-display="&lt;1">&lt;1</span><span class="stat-suffix">s</span></div>
         <div class="stat-label">Time to first paid tick</div>
       </div>
       <div class="stat-card">
-        <div class="stat-num"><span class="counter" data-target="5042">0</span></div>
+        <div class="stat-num"><span class="counter" data-target="5042002" data-display="5,042,002">5,042,002</span></div>
         <div class="stat-label">Arc testnet chain ID</div>
       </div>
       <div class="stat-card">
-        <div class="stat-num"><span class="counter" data-target="6">0</span><span class="stat-suffix">+</span></div>
+        <div class="stat-num"><span class="counter" data-target="6" data-display="6">6</span><span class="stat-suffix">+</span></div>
         <div class="stat-label">Circle primitives used</div>
       </div>
     </div>
@@ -633,7 +669,7 @@
       <div class="project-card project-card-status">
         <div class="project-card-icon">🟢</div>
         <div class="project-card-label">Status</div>
-        <div class="project-card-value">Live on Arc testnet</div>
+        <div class="project-card-value">Live Arc testnet ready</div>
         <div class="project-card-meta">All systems operational</div>
       </div>
     </div>
@@ -646,7 +682,7 @@
     <div class="cta-card glass-card">
       <div class="cta-badge"><span class="badge-dot"></span>Ready to listen?</div>
       <h2 class="cta-title">Try PerStream now.</h2>
-      <p class="cta-sub">Sign in with any email, deposit $5 testnet USDC, and start streaming. Real on-chain. Real Arcscan. Real seconds.</p>
+      <p class="cta-sub">Sign in with any email, deposit $5 USDC, and start streaming. The per-second meter, x402 flow, withdrawals, and Arcscan link are all the same code in both modes. Flip <code>PAYMENTS_MODE=live</code> for real on-chain settlement.</p>
       <div class="cta-actions">
         <a href="listen.html" class="btn btn-primary btn-xl btn-ripple">
           <span class="btn-content">▶ Try the live demo</span>
@@ -754,7 +790,7 @@
       </div>
       <div class="footer-bottom">
         <div>© 2026 Oluyemi (@donyemiight). Released under MIT License.</div>
-        <div>Built with ❤️ for the <strong>MiniMax Hackathon</strong></div>
+        <div>Built with ❤️ for the <strong>Lepton Agents Hackathon</strong> · June 2026</div>
       </div>
     </div>
     <button class="back-to-top" id="back-to-top" aria-label="Back to top">↑</button>
@@ -786,6 +822,17 @@
     // Animated counters
     function animateCounters() {
       const counters = document.querySelectorAll('.counter');
+      // IMMEDIATE FALLBACK: if the user has scrolled past the section or the
+      // observer never fires, every counter should still show its real value
+      // (via data-display) instead of '0'. We set this on a 250ms timeout.
+      setTimeout(() => {
+        counters.forEach((c) => {
+          if (!c.dataset.animated && c.dataset.display) {
+            c.textContent = c.dataset.display;
+          }
+        });
+      }, 250);
+
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting && !entry.target.dataset.animated) {
@@ -796,14 +843,20 @@
             const step = (now) => {
               const t = Math.min(1, (now - startTime) / duration);
               const ease = 1 - Math.pow(1 - t, 3);
-              entry.target.textContent = Math.floor(ease * target).toLocaleString();
+              // Interpolate, but use the live display fallback if value
+              // overflows the integer parse (e.g. '<1').
+              if (!isNaN(target)) {
+                entry.target.textContent = Math.floor(ease * target).toLocaleString();
+              } else {
+                entry.target.textContent = entry.target.dataset.display || String(target);
+              }
               if (t < 1) requestAnimationFrame(step);
-              else entry.target.textContent = target.toLocaleString();
+              else if (!isNaN(target)) entry.target.textContent = target.toLocaleString();
             };
             requestAnimationFrame(step);
           }
         });
-      }, { threshold: 0.5 });
+      }, { threshold: 0.3 });
       counters.forEach(c => observer.observe(c));
     }
 

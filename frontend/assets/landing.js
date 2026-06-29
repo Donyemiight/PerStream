@@ -36,8 +36,9 @@
     if (txt) {
       txt.textContent = '🟡 Demo mode · loading live stats…';
     }
+    const apiBase = (typeof window !== 'undefined' && window.PERSTREAM_API) || '';
     try {
-      const r = await fetch('api/audit/stats');
+      const r = await fetch(apiBase + '/api/audit/stats');
       if (!r.ok) throw new Error('not ok');
       const d = await r.json();
       if (txt) {
@@ -47,11 +48,22 @@
           txt.innerHTML = '🟡 Demo mode · <a href="LIVE_SETUP.html">Switch to live Arc testnet</a>';
         }
       }
-      // Update stats if elements exist (landing page)
+      // Update stats if elements exist (landing page hero)
       const ticksEl = document.getElementById('stat-ticks');
       const paidEl = document.getElementById('stat-paid');
-      if (ticksEl && d.totalTicks) ticksEl.textContent = d.totalTicks;
-      if (paidEl && d.totalAmountUsd) paidEl.textContent = '$' + parseFloat(d.totalAmountUsd).toFixed(4);
+      const txEl = document.getElementById('stat-tx');
+      const tracksEl = document.getElementById('stat-tracks');
+      if (ticksEl) ticksEl.textContent = (d.totalTicks || 0).toLocaleString();
+      if (paidEl) paidEl.textContent = '$' + (parseFloat(d.totalAmountUsd) || 0).toFixed(4);
+      // Also fetch tx count and published track count
+      try {
+        const [txr, trk] = await Promise.all([
+          fetch(apiBase + '/api/audit/ticks?limit=1000').then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(apiBase + '/api/tracks').then(r => r.ok ? r.json() : null).catch(() => null),
+        ]);
+        if (txEl && txr && Array.isArray(txr.ticks)) txEl.textContent = txr.ticks.length.toLocaleString();
+        if (tracksEl && trk && Array.isArray(trk.tracks)) tracksEl.textContent = trk.tracks.length.toLocaleString();
+      } catch {}
     } catch (e) {
       if (txt) txt.innerHTML = '🟡 Demo mode · <a href="LIVE_SETUP.html">Switch to live Arc testnet</a>';
     }

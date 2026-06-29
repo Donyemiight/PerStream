@@ -128,6 +128,79 @@ const PerStream = (() => {
       await refreshBalance();
     }
     await loadTracks();
+    setupAgentButtons();
+  }
+
+  // ─── AI Listener Agent wiring ───
+  function setupAgentButtons() {
+    const btnListen = document.getElementById('btn-ai-listen');
+    const btnAuto = document.getElementById('btn-ai-autonomous');
+    if (btnListen) btnListen.onclick = () => runAiListen(false);
+    if (btnAuto) btnAuto.onclick = () => runAiListen(true);
+  }
+
+  function setAgentStatus(msg, isError) {
+    const status = document.querySelector('#ai-agent-widget .live-ai-widget-status');
+    if (!status) return;
+    status.innerHTML = (isError ? '⚠️ ' : '<span class="live-dot"></span>') + msg;
+  }
+
+  async function runAiListen(autonomous) {
+    if (!currentUser) { promptLogin(); return; }
+    // Pick the first available published track
+    let track;
+    try {
+      const r = await fetch(API_BASE + '/api/tracks');
+      const { tracks } = await r.json();
+      track = tracks.find(t => t.status === 'published') || tracks[0];
+    } catch (e) {
+      setAgentStatus('Could not reach backend: ' + e.message, true);
+      return;
+    }
+    if (!track) { setAgentStatus('No published tracks yet — upload one first.', true); return; }
+
+    setAgentStatus('Agent listening to "' + track.title + '" · paying per second…');
+
+    const endpoint = autonomous ? '/api/agent/auto' : '/api/agent/listen';
+    const body = autonomous ? { budgetUsd: 5, maxTracks: 1 } : { trackId: track.id, budgetUsd: 1, maxSeconds: 30 };
+    try {
+      const r = await authedFetch(endpoint, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      const data = await r.json();
+      if (data.ok) {
+        const totalUsd = (data.totalAmountUsd || data.amountPaid || 0).toFixed ? (data.totalAmountUsd || data.amountPaid || 0).toFixed(6) : '0.001';
+        const ticks = data.ticks || 1;
+        const rating = data.rating ? ' · left ' + data.rating + '★' : '';
+        setAgentStatus(`Agent finished · ${ticks} ticks · $${totalUsd} USDC spent${rating}`);
+        showToast(`AI agent streamed ${ticks}s of "${track.title}"`, 'success');
+        // Refresh creator-side earnings if applicable
+        if (currentUser.role === 'creator') {
+          try { await refreshDashboard(); } catch {}
+        }
+      } else {
+        setAgentStatus('Agent failed: ' + (data.reason || data.error || 'unknown'), true);
+      }
+    } catch (err) {
+      setAgentStatus('Network error: ' + err.message, true);
+    }
+  }
+
+  async function refreshDashboard() {
+    // Best-effort refresh after agent run — calls dashboard endpoint
+    try {
+      const r = await authedFetch('/api/creator/dashboard');
+      if (r.ok) {
+        const data = await r.json();
+        // Update KPI if present
+        const k = document.getElementById('kpi-available');
+        if (k && data.earnings) {
+          const v = Number(data.earnings.total);
+          k.textContent = '$' + (Number.isFinite(v) ? v.toFixed(6) : '0.000000');
+        }
+      }
+    } catch {}
   }
 
   // Always fetch fresh balance from server (single source of truth).
@@ -182,7 +255,7 @@ const PerStream = (() => {
         <div class="track-item" data-track-id="${t.id}">
           <div class="track-info">
             <div class="track-title">${escapeHtml(t.title)}</div>
-            <div class="track-meta">${formatDuration(t.duration_sec)} · ${t.plays} plays</div>
+            <div class="track-meta">${formatDuration(t.duration_sec)} · ${t.plays} plays · <span class="muted">seeded</span></div>
           </div>
           <div class="track-price">${formatUsdc(t.price_per_sec)} / sec</div>
         </div>
