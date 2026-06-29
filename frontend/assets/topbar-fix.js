@@ -32,11 +32,33 @@
         '<span class="demo-pill">⚡ Demo mode — simulated USDC on Arc testnet</span>';
       if (dot) dot.style.background = '#fbbf24';
       if (dot) dot.style.boxShadow = '0 0 8px #fbbf24';
+      // Watch for landing.js trying to overwrite — keep our demo pill stable
+      setupDemoPillGuard(txt);
     } else if (mode === 'live') {
       txt.textContent = 'Connected to Arc testnet';
       if (dot) dot.style.background = '#10b981';
       if (dot) dot.style.boxShadow = '0 0 8px #10b981';
     }
+  }
+
+  // Keep our demo pill stable if other scripts try to overwrite the topbar text.
+  function setupDemoPillGuard(txt) {
+    if (window.__perstreamPillGuard) return;
+    window.__perstreamPillGuard = true;
+    const PILL_HTML =
+      '<span class="demo-pill">⚡ Demo mode — simulated USDC on Arc testnet</span>';
+    const obs = new MutationObserver(() => {
+      // If demo mode forced and someone overwrote the text, restore pill
+      if (
+        window.__perstreamDemoModeForced &&
+        !txt.querySelector('.demo-pill')
+      ) {
+        txt.innerHTML = PILL_HTML;
+      }
+    });
+    obs.observe(txt, { childList: true, characterData: true, subtree: true });
+    // Stop guard after 30s (other scripts should settle by then)
+    setTimeout(() => obs.disconnect(), 30000);
   }
 
   // First, attempt to detect actual connectivity by pinging API health endpoint.
