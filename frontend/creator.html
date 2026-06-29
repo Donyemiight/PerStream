@@ -392,14 +392,20 @@
   <script src="assets/landing.js?v=98n"></script>
   <script src="assets/creator.js?v=98n"></script>
   <script>
-    // Hide page loader once everything is loaded
-    window.addEventListener('load', () => {
+    // Hide page loader once everything is loaded (with robust fallback)
+    function hidePageLoader() {
       const loader = document.getElementById('page-loader');
       if (loader) {
         loader.classList.add('loaded');
         setTimeout(() => loader.remove(), 400);
       }
-    });
+    }
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(hidePageLoader, 100);
+    } else {
+      window.addEventListener('load', hidePageLoader);
+    }
+    setTimeout(hidePageLoader, 1800); // fallback in case 'load' never fires
     // Initialize creator page
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => {
