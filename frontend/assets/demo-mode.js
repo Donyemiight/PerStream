@@ -73,14 +73,27 @@
   function micro(amount) { return Math.floor((amount || 0) * 1_000_000); }
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-  // Override fetch to intercept API calls
-  const realFetch = window.fetch.bind(window);
-  window.fetch = async function(url, opts = {}) {
-    const urlStr = typeof url === 'string' ? url : url.url;
-    if (!urlStr.includes('/api/')) return realFetch(url, opts);
+  // ──────────────────────────────────────────────
+  // Route handler — used by both fetch and XHR interceptors
+  // ──────────────────────────────────────────────
+  function handleApiRequest(method, rawPath, rawBody) {
+    // Parse body (JSON or urlencoded; multipart handled by query string fallback)
+    let body = {};
+    if (rawBody && typeof rawBody === 'string') {
+      try { body = JSON.parse(rawBody); } catch (e) { body = {}; }
+    } else if (rawBody && typeof rawBody === 'object' && !(rawBody instanceof FormData)) {
+      body = rawBody;
+    }
+    // Extract query string from path
+    let path = rawPath;
+    let queryString = '';
+    if (rawPath.includes('?')) {
+      const qIdx = rawPath.indexOf('?');
+      queryString = rawPath.slice(qIdx + 1);
+      path = rawPath.slice(0, qIdx);
+    }
+    const qs = new URLSearchParams(queryString);
 
-    const path = urlStr.replace(/^https?:\/\/[^/]+/, '').replace(/^demo/, '');
-    const method = (opts.method || 'GET').toUpperCase();
 
     // POST /api/auth/login
     if (method === 'POST' && path === '/api/auth/login') {
@@ -88,59 +101,60 @@
       const email = body.email || '';
       const user = DEMO_USERS.find(u => u.email === email) || DEMO_USERS[1];
       state.currentUser = { ...user };
-      return json({ user: state.currentUser, wallet: { address: user.wallet, mode: 'demo' } });
+      return { body: { user: state.currentUser, wallet: { address: user.wallet, mode: 'demo' } } };;
     }
 
     // GET /api/auth/me
     if (method === 'GET' && path === '/api/auth/me') {
-      return json({ user: state.currentUser });
+      return { body: { user: state.currentUser } };;
     }
 
     // GET /api/tracks
     if (method === 'GET' && path === '/api/tracks') {
-      return json({ tracks: DEMO_TRACKS });
+      return { body: { tracks: DEMO_TRACKS } };;
     }
 
     // GET /api/tracks/:id
     if (method === 'GET' && path.match(/^\/api\/tracks\/[^/]+$/)) {
       const id = path.split('/').pop();
       const track = DEMO_TRACKS.find(t => t.id === id);
-      if (!track) return json({ error: 'not_found' }, 404);
+      if (!track) return { body: { error: 'not_found' }, status: 404 };;
       const creator = DEMO_USERS.find(u => u.id === track.creator_id);
-      return json({ track: { ...track, creator } });
+      return { body: { track: { ...track, creator } } };;
     }
 
     // GET /api/tracks/:id/stream
     if (method === 'GET' && path.match(/^\/api\/tracks\/[^/]+\/stream$/)) {
       const id = path.split('/')[3];
       const track = DEMO_TRACKS.find(t => t.id === id);
-      if (!track) return json({ error: 'not_found' }, 404);
+      if (!track) return { body: { error: 'not_found' }, status: 404 };;
       // Simulate x402: if no balance, return 402
       if (state.balance < track.price_per_sec) {
-        return new Response(JSON.stringify({
+        return {
+        status: 402,
+        body: {
           error: 'payment_required',
           pricePerSec: track.price_per_sec,
           pricePerSecUsd: usd(track.price_per_sec),
           creator: track.creator_id,
           trackId: track.id,
-        }), {
-          status: 402,
-          headers: {
-            'X-PerStream-Price': String(track.price_per_sec),
-            'X-PerStream-Price-Usd': String(usd(track.price_per_sec)),
-            'X-PerStream-Creator': track.creator_id,
-            'X-PerStream-Track-Id': track.id,
-          },
-        });
+        },
+        headers: {
+          'X-PerStream-Price': String(track.price_per_sec),
+          'X-PerStream-Price-Usd': String(usd(track.price_per_sec)),
+          'X-PerStream-Creator': track.creator_id,
+          'X-PerStream-Track-Id': track.id,
+        },
+      };
       }
-      return json({
+      return { body: {
         ok: true,
         trackId: track.id,
         audioUrl: track.audioUrl || 'assets/loop.mp3',  // real demo audio
         pricePerSec: track.price_per_sec,
         durationSec: track.duration_sec,
         balanceMicroUsdc: state.balance,
-      });
+      } };;
     }
 
     // POST /api/listen/deposit
@@ -148,14 +162,14 @@
       const body = JSON.parse(opts.body || '{}');
       const amount = micro(parseFloat(body.amountUsd || 0));
       state.balance += amount;
-      return json({ ok: true, balance: state.balance });
+      return { body: { ok: true, balance: state.balance } };;
     }
 
     // POST /api/listen/start
     if (method === 'POST' && path === '/api/listen/start') {
       const body = JSON.parse(opts.body || '{}');
       const track = DEMO_TRACKS.find(t => t.id === body.trackId);
-      if (!track) return json({ error: 'not_found' }, 404);
+      if (!track) return { body: { error: 'not_found' }, status: 404 };;
       state.activeSession = {
         sessionId: 'demo-' + Date.now(),
         trackId: track.id,
@@ -164,31 +178,31 @@
         amountPaid: 0,
       };
       startMeter(track);
-      return json({
+      return { body: {
         sessionId: state.activeSession.sessionId,
         trackId: track.id,
         pricePerSec: track.price_per_sec,
         pricePerSecUsd: usd(track.price_per_sec),
-      });
+      } };;
     }
 
     // POST /api/listen/stop
     if (method === 'POST' && path === '/api/listen/stop') {
       stopMeter();
-      return json({
+      return { body: {
         session: state.activeSession,
         totalPaidUsd: usd(state.activeSession?.amountPaid || 0),
-      });
+      } };;
     }
 
     // GET /api/listen/poll
     if (method === 'GET' && path.startsWith('/api/listen/poll')) {
-      return json({
+      return { body: {
         tick: !!state.activeSession,
         secondsPlayed: state.activeSession?.secondsPlayed || 0,
         amountPaid: state.activeSession?.amountPaid || 0,
         balance: state.balance,
-      });
+      } };;
     }
 
     // GET /api/creator/dashboard
@@ -211,57 +225,57 @@
         earnings_total: 0,
       };
       DEMO_TRACKS.unshift(newTrack);
-      return json({ track: newTrack });
+      return { body: { track: newTrack } };;
     }
     // PUT /api/creator/tracks/:id — update track
     if (method === 'PUT' && path.match(/^\/api\/creator\/tracks\/[^/]+$/)) {
       const id = path.split('/').pop();
       const body = JSON.parse(opts.body || '{}');
       const t = DEMO_TRACKS.find(x => x.id === id);
-      if (!t) return json({ error: 'not_found' }, 404);
+      if (!t) return { body: { error: 'not_found' }, status: 404 };;
       Object.assign(t, body);
-      return json({ track: t });
+      return { body: { track: t } };;
     }
     // DELETE /api/creator/tracks/:id — delete track
     if (method === 'DELETE' && path.match(/^\/api\/creator\/tracks\/[^/]+$/)) {
       const id = path.split('/').pop();
       const idx = DEMO_TRACKS.findIndex(x => x.id === id);
-      if (idx === -1) return json({ error: 'not_found' }, 404);
+      if (idx === -1) return { body: { error: 'not_found' }, status: 404 };;
       DEMO_TRACKS.splice(idx, 1);
-      return json({ ok: true });
+      return { body: { ok: true } };;
     }
     // POST /api/creator/tracks/:id/status — publish/unpublish
     if (method === 'POST' && path.match(/^\/api\/creator\/tracks\/[^/]+\/status$/)) {
       const id = path.split('/')[4];
       const body = JSON.parse(opts.body || '{}');
       const t = DEMO_TRACKS.find(x => x.id === id);
-      if (!t) return json({ error: 'not_found' }, 404);
+      if (!t) return { body: { error: 'not_found' }, status: 404 };;
       t.status = body.status || 'published';
-      return json({ track: t });
+      return { body: { track: t } };;
     }
     // GET /api/creator/profile
     if (method === 'GET' && path === '/api/creator/profile') {
-      return json({ profile: { id: 'demo', handle: 'demo', display_name: 'Demo Creator', bio: 'Demo mode', avatar_url: '', social_links: {} } });
+      return { body: { profile: { id: 'demo', handle: 'demo', display_name: 'Demo Creator', bio: 'Demo mode', avatar_url: '', social_links: {} } } };;
     }
     // PUT /api/creator/profile
     if (method === 'PUT' && path === '/api/creator/profile') {
       const body = JSON.parse(opts.body || '{}');
-      return json({ profile: { id: 'demo', handle: 'demo', ...body } });
+      return { body: { profile: { id: 'demo', handle: 'demo', ...body } } };;
     }
     // GET /api/creator/notifications
     if (method === 'GET' && path === '/api/creator/notifications') {
-      return json({ notifications: state.notifications || [], unreadCount: 0 });
+      return { body: { notifications: state.notifications || [], unreadCount: 0 } };;
     }
     // POST /api/creator/notifications/:id/read
     if (method === 'POST' && path.match(/^\/api\/creator\/notifications\/[^/]+\/read$/)) {
-      return json({ ok: true });
+      return { body: { ok: true } };;
     }
     // GET /api/creator/withdrawals
     if (method === 'GET' && path === '/api/creator/withdrawals') {
-      return json({ withdrawals: state.withdrawals || [] });
+      return { body: { withdrawals: state.withdrawals || [] } };;
     }
     if (method === 'GET' && path === '/api/creator/dashboard') {
-      return json({
+      return { body: {
         creator: state.currentUser,
         earningsLive: usd(state.creatorEarnings),
         earningsRecorded: usd(state.creatorEarnings),
@@ -274,7 +288,7 @@
           recent: state.feedback.slice(-10).reverse(),
         },
         leads: { count: state.leads.length },
-      });
+      } };;
     }
 
     // POST /api/feedback
@@ -282,7 +296,7 @@
       const body = JSON.parse(opts.body || '{}');
       const rating = parseInt(body.rating, 10);
       if (!rating || rating < 1 || rating > 5) {
-        return json({ error: 'rating must be 1-5' }, 400);
+        return { body: { error: 'rating must be 1-5' }, status: 400 };;
       }
       const entry = {
         id: state.feedback.length + 1,
@@ -295,7 +309,7 @@
         created_at: Date.now(),
       };
       state.feedback.push(entry);
-      return json({ ok: true, id: entry.id });
+      return { body: { ok: true, id: entry.id } };;
     }
 
     // GET /api/feedback/stats
@@ -304,19 +318,19 @@
       const avg = total ? Math.round(state.feedback.reduce((s, f) => s + f.rating, 0) / total * 10) / 10 : 0;
       const distribution = {};
       for (let i = 1; i <= 5; i++) distribution[i] = state.feedback.filter(f => f.rating === i).length;
-      return json({ total, average: avg, distribution, recent: state.feedback.slice(-10).reverse() });
+      return { body: { total, average: avg, distribution, recent: state.feedback.slice(-10).reverse() } };;
     }
 
     // GET /api/feedback
     if (method === 'GET' && path === '/api/feedback') {
-      return json({ feedback: state.feedback.slice(-parseInt(req.query.limit || '50', 10)).reverse() });
+      return { body: { feedback: state.feedback.slice(-parseInt(req.query.limit || '50', 10)).reverse() } };;
     }
 
     // POST /api/lead
     if (method === 'POST' && path === '/api/lead') {
       const body = JSON.parse(opts.body || '{}');
       if (!body.email || !body.email.includes('@')) {
-        return json({ error: 'valid email required' }, 400);
+        return { body: { error: 'valid email required' }, status: 400 };;
       }
       const lead = {
         id: state.leads.length + 1,
@@ -327,12 +341,12 @@
         created_at: Date.now(),
       };
       state.leads.push(lead);
-      return json({ ok: true });
+      return { body: { ok: true } };;
     }
 
     // GET /api/lead/count
     if (method === 'GET' && path === '/api/lead/count') {
-      return json({ count: state.leads.length });
+      return { body: { count: state.leads.length } };;
     }
 
     // GET /api/audit/ticks
@@ -349,13 +363,13 @@
         oldestTick: state.tickLedger.length > 0 ? state.tickLedger[0].ts : null,
         newestTick: state.tickLedger.length > 0 ? state.tickLedger[state.tickLedger.length - 1].ts : null,
       };
-      return json({ mode: 'mock', stats, ticks });
+      return { body: { mode: 'mock', stats, ticks } };;
     }
 
     // GET /api/audit/stats
     if (method === 'GET' && path === '/api/audit/stats') {
       const totalMicro = state.tickLedger.reduce((sum, e) => sum + (e.amountMicro || 0), 0);
-      return json({
+      return { body: {
         mode: 'mock',
         sellerAddress: '0xe6737b1cb6cdbc484fd11d658e664835a7673e46',
         arcscanBaseUrl: 'https://testnet.arcscan.app',
@@ -366,64 +380,78 @@
         uniqueCreators: new Set(state.tickLedger.map(e => e.creator)).size,
         oldestTick: state.tickLedger.length > 0 ? state.tickLedger[0].ts : null,
         newestTick: state.tickLedger.length > 0 ? state.tickLedger[state.tickLedger.length - 1].ts : null,
-      });
+      } };;
     }
 
-    // Fallback: real fetch
-    return realFetch(url, opts);
-  };
+    // Default 200
+    return { body: { error: 'not_handled', method, path } };
+  }
 
-  function json(data, status = 200) {
+  // ──────────────────────────────────────────────
+  // Response helper
+  // ──────────────────────────────────────────────
+  function json(data, status = 200, headers = {}) {
     return new Response(JSON.stringify(data), {
       status,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...headers },
     });
   }
 
-  function startMeter(track) {
-    stopMeter();
-    state.meterInterval = setInterval(() => {
-      if (!state.activeSession) return;
-      const s = state.activeSession;
-      if (state.balance < s.pricePerSec) {
-        stopMeter();
-        return;
-      }
-      state.balance -= s.pricePerSec;
-      s.secondsPlayed += 1;
-      s.amountPaid += s.pricePerSec;
-      state.creatorEarnings += s.pricePerSec;
+  // ──────────────────────────────────────────────
+  // Override fetch
+  // ──────────────────────────────────────────────
+  const realFetch = window.fetch.bind(window);
+  window.fetch = async function(url, opts = {}) {
+    const urlStr = typeof url === 'string' ? url : url.url;
+    if (!urlStr.includes('/api/')) return realFetch(url, opts);
+    const path = urlStr.replace(/^https?:\/\/[^/]+/, '').replace(/^demo/, '');
+    const method = (opts.method || 'GET').toUpperCase();
+    const result = handleApiRequest(method, path, opts.body);
+    return json(result.body, result.status, result.headers);
+  };
 
-      // Record in audit ledger
-      state.txCounter += 1;
-      const sid = s.sessionId.slice(0, 8);
-      const stamp = Date.now().toString(16);
-      const txHash = `0x${sid}${stamp}${state.txCounter.toString(16).padStart(4, '0')}`.padEnd(66, '0');
-      state.tickLedger.push({
-        ts: new Date().toISOString(),
-        sessionId: s.sessionId,
-        trackId: s.trackId,
-        listener: state.currentUser ? state.currentUser.wallet : 'demo-listener-wallet',
-        creator: track.creator_id || 'demo-creator',
-        amountMicro: s.pricePerSec,
-        amountUsd: s.pricePerSec / 1_000_000,
-        txHash,
-        arcscanUrl: `https://testnet.arcscan.app/tx/${txHash}`,
-        mode: 'mock',
-      });
-      // Cap memory
-      if (state.tickLedger.length > 1000) state.tickLedger.shift();
-    }, 1000);
+  // ──────────────────────────────────────────────
+  // Override XMLHttpRequest — needed for multipart uploads
+  // ──────────────────────────────────────────────
+  const RealXHR = window.XMLHttpRequest;
+  function FakeXHR() {
+    const xhr = new RealXHR();
+    let _method, _url, _body;
+    const origOpen = xhr.open.bind(xhr);
+    xhr.open = function(method, url) {
+      _method = method;
+      _url = url;
+      return origOpen(method, url);
+    };
+    const origSend = xhr.send.bind(xhr);
+    xhr.send = function(body) {
+      _body = body;
+      const urlStr = String(_url);
+      if (!urlStr.includes('/api/')) return origSend(body);
+      const path = urlStr.replace(/^https?:\/\/[^/]+/, '').replace(/^demo/, '');
+      const result = handleApiRequest((_method || 'GET').toUpperCase(), path, body);
+      const headers = result.headers || {};
+      Object.defineProperty(xhr, 'status', { value: result.status || 200, configurable: true });
+      Object.defineProperty(xhr, 'responseText', { value: JSON.stringify(result.body), configurable: true });
+      Object.defineProperty(xhr, 'response', { value: JSON.stringify(result.body), configurable: true });
+      Object.defineProperty(xhr, 'readyState', { value: 4, configurable: true });
+      xhr.getResponseHeader = function(name) {
+        if (headers[name]) return headers[name];
+        if (headers[name.toLowerCase()]) return headers[name.toLowerCase()];
+        return null;
+      };
+      xhr.getAllResponseHeaders = function() {
+        let h = '';
+        for (const k of Object.keys(headers)) h += k + ': ' + headers[k] + '\r\n';
+        return h;
+      };
+      setTimeout(() => {
+        if (xhr.onload) xhr.onload();
+        if (xhr.onreadystatechange) xhr.onreadystatechange();
+      }, 0);
+    };
+    return xhr;
   }
-
-  function stopMeter() {
-    if (state.meterInterval) {
-      clearInterval(state.meterInterval);
-      state.meterInterval = null;
-    }
-    state.activeSession = null;
-  }
-
-  console.log('[demo mode] PerStream public preview — simulated backend active');
-  console.log('[demo mode] try logging in with demo-listener@perstream.fm');
+  FakeXHR.prototype = RealXHR.prototype;
+  window.XMLHttpRequest = FakeXHR;
 })();

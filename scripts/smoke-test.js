@@ -24,7 +24,7 @@ try { fs.rmSync(TEST_AUDIO, { recursive: true, force: true }); } catch {}
 fs.mkdirSync(TEST_AUDIO, { recursive: true });
 
 // Count expected tests for self-check
-const EXPECTED_TESTS = 16;
+const EXPECTED_TESTS = 19;
 console.log(`[smoke] running ${EXPECTED_TESTS} tests against http://localhost:${process.env.PORT}`);
 console.log(`[smoke] DB: ${TEST_DB}`);
 
@@ -231,6 +231,80 @@ async function main() {
       pass(`GET /api/lead/count → ${r.body.count} leads`);
     } else fail('lead count', JSON.stringify(r));
   } catch (e) { fail('lead count', e.message); }
+
+  // 17. Upload track via multipart POST /api/creator/tracks?status=published
+  // (regression test for the v98g "Upload failed (HTTP 405)" bug)
+  let publishedTrackId;
+  try {
+    // Build multipart/form-data manually (no deps needed)
+    const boundary = '----PerStreamSmoke' + Date.now();
+    const fields = {
+      title: 'Publish Smoke Test',
+      description: 'Verifying POST /api/creator/tracks?status=published works',
+      pricePerSec: '150',
+      durationSec: '30',
+      category: 'smoke',
+    };
+    const parts = [];
+    for (const [k, v] of Object.entries(fields)) {
+      parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${k}"\r\n\r\n${v}\r\n`));
+    }
+    const audioBuf = Buffer.from('ID3fake-mp3-content-for-smoke-test');
+    parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="audio"; filename="smoke.mp3"\r\nContent-Type: audio/mpeg\r\n\r\n`));
+    parts.push(audioBuf);
+    parts.push(Buffer.from(`\r\n--${boundary}--\r\n`));
+    const body = Buffer.concat(parts);
+
+    const uploadResp = await new Promise((resolve, reject) => {
+      const r = http.request({
+        method: 'POST',
+        hostname: 'localhost',
+        port: process.env.PORT,
+        path: '/api/creator/tracks?status=published',
+        headers: {
+          'Content-Type': 'multipart/form-data; boundary=' + boundary,
+          'Content-Length': body.length,
+          'X-User-Id': creatorId,
+        },
+      }, (res) => {
+        let chunks = [];
+        res.on('data', c => chunks.push(c));
+        res.on('end', () => {
+          const text = Buffer.concat(chunks).toString();
+          let json = null;
+          try { json = JSON.parse(text); } catch {}
+          resolve({ status: res.statusCode, body: json });
+        });
+      });
+      r.on('error', reject);
+      r.write(body);
+      r.end();
+    });
+
+    if (uploadResp.status === 200 && uploadResp.body && uploadResp.body.track && uploadResp.body.track.status === 'published') {
+      publishedTrackId = uploadResp.body.track.id;
+      pass(`POST /api/creator/tracks?status=published → track ${publishedTrackId.slice(-6)} published (multipart)`);
+    } else {
+      fail('publish track', JSON.stringify(uploadResp));
+    }
+  } catch (e) { fail('publish track', e.message); }
+
+  // 18. Verify published track is in public listing
+  try {
+    const r = await req('GET', '/api/tracks');
+    if (r.status === 200 && r.body.tracks.find(t => t.id === publishedTrackId)) {
+      pass(`GET /api/tracks → newly published track is visible publicly`);
+    } else fail('verify published', JSON.stringify(r.body));
+  } catch (e) { fail('verify published', e.message); }
+
+  // 19. Toggle published → draft → published via status endpoint
+  try {
+    const r1 = await req('POST', `/api/creator/tracks/${publishedTrackId}/status`, { status: 'draft' }, { 'X-User-Id': creatorId });
+    const r2 = await req('POST', `/api/creator/tracks/${publishedTrackId}/status`, { status: 'published' }, { 'X-User-Id': creatorId });
+    if (r1.status === 200 && r2.status === 200 && r2.body.track.status === 'published') {
+      pass(`POST /api/creator/tracks/:id/status → publish/unpublish cycle works`);
+    } else fail('toggle status', `${r1.status}/${r2.status}`);
+  } catch (e) { fail('toggle status', e.message); }
 
   console.log(`\n[test] ${passed} passed, ${failures} failed\n`);
   db.flushSync();
