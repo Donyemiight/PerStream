@@ -221,6 +221,31 @@ const PerStream = (() => {
       audio.src = track.audioUrl || 'assets/loop.mp3';
     }
 
+    // Log audio load issues so the user can see them in the player-error overlay.
+    audio.addEventListener('error', () => {
+      const err = audio.error;
+      const codeMap = {
+        1: 'MEDIA_ERR_ABORTED',
+        2: 'MEDIA_ERR_NETWORK',
+        3: 'MEDIA_ERR_DECODE',
+        4: 'MEDIA_ERR_SRC_NOT_SUPPORTED',
+      };
+      const msg = `Audio failed to load: ${err ? codeMap[err.code] || 'unknown' : 'unknown'}`;
+      console.error('[perstream]', msg, 'src:', audio.src);
+      const errEl = document.getElementById('player-error');
+      if (errEl) {
+        errEl.textContent = msg;
+        errEl.style.display = 'block';
+      }
+    });
+    audio.addEventListener('canplay', () => {
+      console.log('[perstream] audio can play, duration:', audio.duration, 'src:', audio.src);
+    });
+    audio.addEventListener('playing', () => {
+      console.log('[perstream] audio playing');
+    });
+    audio.load();
+
     // === SIMPLIFIED METER (demo) ===
     // The meter runs as a local setInterval and updates the UI directly.
     // No dependency on the audio element's play event — which can be flaky on mobile.
@@ -236,7 +261,24 @@ const PerStream = (() => {
       meterRunning = true;
       document.getElementById('stat-status').textContent = 'Streaming — paying per second';
 
-      // Try backend (best effort) but don't block on failure
+      // CRITICAL: Call audio.play() IMMEDIATELY in the user-gesture context
+      // before any awaits — iOS Safari loses the user-gesture flag after
+      // the first async boundary, which silently blocks audio playback.
+      try {
+        const playPromise = audio.play();
+        if (playPromise && playPromise.then) {
+          playPromise.then(() => {
+            console.log('[perstream] audio.play() resolved, currentTime=', audio.currentTime);
+          }).catch((err) => {
+            console.warn('[perstream] audio.play() rejected:', err.message, 'src:', audio.src);
+            showToast('Tap the play icon to enable audio', 'info');
+          });
+        }
+      } catch (e) {
+        console.warn('[perstream] audio.play() threw:', e.message);
+      }
+
+      // Now do the backend call (after audio.play has fired)
       try {
         const r = await authedFetch('/api/listen/start', {
           method: 'POST',
@@ -273,8 +315,7 @@ const PerStream = (() => {
         } catch {}
       }, 1100);
 
-      // Try to start the audio too (silent WAV in demo) — fire and forget
-      audio.play().catch(() => {});
+      // Audio already started at top of startMeter (must be in user-gesture context)
     };
 
     // Local tick is now handled via server poll above; legacy local-math removed.
