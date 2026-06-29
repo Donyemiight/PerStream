@@ -158,6 +158,52 @@ module.exports = {
   getBySession,
   stats,
   streamAll,
+  totalForCreator,
+  totalForCreatorByTime,
   clear,
   LEDGER_PATH,
 };
+
+/**
+ * Sum all earnings for a specific creator across the entire ledger file.
+ * Streams the file line-by-line so we don't load 100k+ ticks into memory.
+ * Returns { total, today, thisWeek, thisMonth, count } in micro-USDC.
+ */
+function totalForCreator(creatorWallet) {
+  return totalForCreatorByTime(creatorWallet, 0); // 0 = no time filter
+}
+
+function totalForCreatorByTime(creatorWallet, sinceMs) {
+  let total = 0;
+  let count = 0;
+  const now = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const weekMs = 7 * dayMs;
+  const monthMs = 30 * dayMs;
+  let today = 0, thisWeek = 0, thisMonth = 0;
+
+  try {
+    ensureDir();
+    if (!fs.existsSync(LEDGER_PATH)) {
+      return { total: 0, today: 0, thisWeek: 0, thisMonth: 0, count: 0 };
+    }
+    const lines = fs.readFileSync(LEDGER_PATH, 'utf8').split('\n');
+    for (const line of lines) {
+      if (!line) continue;
+      let r;
+      try { r = JSON.parse(line); } catch { continue; }
+      if (r.creator !== creatorWallet) continue;
+      const amt = r.amountMicro || 0;
+      const ts = r.tsMs || 0;
+      if (sinceMs && ts < sinceMs) continue;
+      total += amt;
+      count++;
+      if (ts >= now - dayMs) today += amt;
+      if (ts >= now - weekMs) thisWeek += amt;
+      if (ts >= now - monthMs) thisMonth += amt;
+    }
+  } catch (err) {
+    console.warn('[ledger] totalForCreator failed:', err.message);
+  }
+  return { total, today, thisWeek, thisMonth, count };
+}

@@ -6,17 +6,17 @@
 
 | Type | URL |
 |---|---|
-| **Static** | `https://bmabr9uvyv2q.space.minimax.io` |
-| **Live (Arc testnet)** | `https://seas-ing-served-amy.trycloudflare.com` |
+| **Static** | `https://9tu56nbtqjro.space.minimax.io` |
+| **Live (Arc testnet)** | `https://label-musicians-addition-armed.trycloudflare.com` |
 
 ### Direct pages
 
 | Page | Static | Live |
 |---|---|---|
-| Landing | `https://bmabr9uvyv2q.space.minimax.io` | `https://seas-ing-served-amy.trycloudflare.com` |
-| Listen | `https://bmabr9uvyv2q.space.minimax.io/listen.html` | `https://seas-ing-served-amy.trycloudflare.com/listen.html` |
-| Creator | `https://bmabr9uvyv2q.space.minimax.io/creator.html` | `https://seas-ing-served-amy.trycloudflare.com/creator.html` |
-| LIVE_SETUP | `https://bmabr9uvyv2q.space.minimax.io/LIVE_SETUP.html` | `https://seas-ing-served-amy.trycloudflare.com/LIVE_SETUP.html` |
+| Landing | `https://9tu56nbtqjro.space.minimax.io` | `https://label-musicians-addition-armed.trycloudflare.com` |
+| Listen | `https://9tu56nbtqjro.space.minimax.io/listen.html` | `https://label-musicians-addition-armed.trycloudflare.com/listen.html` |
+| Creator | `https://9tu56nbtqjro.space.minimax.io/creator.html` | `https://label-musicians-addition-armed.trycloudflare.com/creator.html` |
+| LIVE_SETUP | `https://9tu56nbtqjro.space.minimax.io/LIVE_SETUP.html` | `https://label-musicians-addition-armed.trycloudflare.com/LIVE_SETUP.html` |
 
 ## GitHub
 

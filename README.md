@@ -35,8 +35,8 @@ PerStream lets **creators** monetize audio from **listener #1** by charging USDC
 
 | URL | Mode |
 |---|---|
-| **https://bmabr9uvyv2q.space.minimax.io** | Static (always online, demo mode) |
-| **https://seas-ing-served-amy.trycloudflare.com** | Live (real Arc testnet settlement) |
+| **https://9tu56nbtqjro.space.minimax.io** | Frontend (talks to live backend) |
+| **https://label-musicians-addition-armed.trycloudflare.com** | Live Node.js backend (mock mode by default, real Arc testnet in `PAYMENTS_MODE=live`) |
 
 ### Demo accounts
 - **Listener:** `demo-listener@perstream.fm`

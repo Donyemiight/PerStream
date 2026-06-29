@@ -67,9 +67,25 @@ function mockTxHash(sessionId) {
 }
 
 async function mockWithdraw({ creator, amountMicroUsdc }) {
-  const earned = mockLedger.creatorEarnings.get(creator) || 0;
+  // Prefer the in-memory ledger, but fall back to the audit ledger if the
+  // backend was restarted (which wipes the in-memory map). The audit ledger
+  // is the source of truth for "how much has this wallet earned so far".
+  let earned = mockLedger.creatorEarnings.get(creator) || 0;
+  if (earned === 0) {
+    try {
+      const ledger = require('./tick-ledger');
+      const total = ledger.totalForCreator(creator);
+      earned = total.total;
+      // Re-hydrate the in-memory ledger so subsequent withdraws are O(1)
+      if (earned > 0) {
+        mockLedger.creatorEarnings.set(creator, earned);
+      }
+    } catch (e) {
+      console.warn('[mockWithdraw] ledger fallback failed:', e.message);
+    }
+  }
   if (amountMicroUsdc > earned) {
-    return { ok: false, reason: 'insufficient_earnings' };
+    return { ok: false, reason: 'insufficient_earnings', available: earned };
   }
   mockLedger.creatorEarnings.set(creator, earned - amountMicroUsdc);
   // Generate a properly-formatted 66-char tx hash for the withdrawal record.

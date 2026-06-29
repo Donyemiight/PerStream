@@ -657,11 +657,16 @@ app.get('/api/creator/dashboard', authMiddleware, (req, res) => {
   const activeListeners = tracks.reduce((s, t) => s + db.getActiveSessionsForTrack(t.id).length, 0);
   const now = Date.now();
   const dayMs = 24 * 60 * 60 * 1000;
+  const weekMs = 7 * dayMs;
+  const monthMs = 30 * dayMs;
   const today = tracks.filter(t => (t.created_at || 0) >= now - dayMs).length;
-  // Lifetime earnings from audit ledger
-  const allTicks = tickLedger.recent(1000);
-  const myTicks = allTicks.filter(t => t.creator === req.user.wallet);
-  const totalAmountMicro = myTicks.reduce((s, t) => s + (t.amountMicro || 0), 0);
+  // Lifetime earnings from audit ledger — stream the full file so we don't
+// miss earnings recorded before the in-memory 1000-tick window rolled over.
+  const lifetime = tickLedger.totalForCreator(req.user.wallet);
+  const totalAmountMicro = lifetime.total;
+  const todayMicro = lifetime.today;
+  const weekMicro = lifetime.thisWeek;
+  const monthMicro = lifetime.thisMonth;
 
   // Most streamed tracks
   const mostStreamed = [...trackStats].sort((a, b) => (b.plays || 0) - (a.plays || 0)).slice(0, 5);
@@ -676,13 +681,16 @@ app.get('/api/creator/dashboard', authMiddleware, (req, res) => {
   res.json({
     creator: req.user,
     profile: db.getCreatorProfile(req.user.id),
+    mode: arc.isLive() ? 'live' : 'mock',
+    sellerAddress: arc.getSellerAddress(),
+    arcscanBase: process.env.ARCSCAN_BASE || 'https://testnet.arcscan.app',
     earningsLive: arc.microToUsd(earningsTotal),
     earningsRecorded: arc.microToUsd(dbEarningsTotal),
     earnings: {
       total: arc.microToUsd(totalAmountMicro),
-      today: arc.microToUsd(0), // could sum ticks in last 24h
-      thisWeek: arc.microToUsd(0),
-      thisMonth: arc.microToUsd(0),
+      today: arc.microToUsd(todayMicro),
+      thisWeek: arc.microToUsd(weekMicro),
+      thisMonth: arc.microToUsd(monthMicro),
     },
     analytics: {
       totalStreams,

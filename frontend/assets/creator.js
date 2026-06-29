@@ -205,19 +205,42 @@
     const profile = dashboardData.profile || {};
     const earnings = dashboardData.earnings || {};
     const analytics = dashboardData.analytics || {};
-    document.getElementById('kpi-total-earned').textContent = earnings.total || '$0.000000';
-    document.getElementById('kpi-available').textContent = earnings.total || '$0.000000';
+
+    // Show mock-mode banner so the user knows this is a demo
+    const mode = dashboardData.mode || 'unknown';
+    const banner = document.getElementById('mode-banner');
+    if (banner) {
+      if (mode === 'mock') {
+        banner.innerHTML = '🧪 <strong>Demo mode</strong> · Withdrawals are simulated (no real USDC moves on-chain). All other flows run end-to-end against the same backend a live deployment uses.';
+        banner.className = 'mode-banner mode-mock';
+        banner.style.display = 'block';
+      } else if (mode === 'live') {
+        banner.innerHTML = '🟢 <strong>Live mode</strong> · Withdrawals settle real USDC on Arc testnet. <a href="' + (dashboardData.arcscanBase || 'https://testnet.arcscan.app') + '" target="_blank" rel="noopener">View on Arcscan</a>';
+        banner.className = 'mode-banner mode-live';
+        banner.style.display = 'block';
+      } else {
+        banner.style.display = 'none';
+      }
+    }
+    function safeUsd(v) {
+      // earnings.* are numbers (e.g. 0.0146). Format as USD string safely.
+      const n = typeof v === 'number' ? v : parseFloat(String(v ?? 0));
+      return Number.isFinite(n) ? '$' + n.toFixed(6) : '$0.000000';
+    }
+
+    document.getElementById('kpi-total-earned').textContent = safeUsd(earnings.total);
+    document.getElementById('kpi-available').textContent = safeUsd(earnings.total);
     document.getElementById('kpi-streams').textContent = (analytics.totalStreams || 0).toLocaleString();
     document.getElementById('kpi-active').textContent = analytics.activeListeners || 0;
-    document.getElementById('kpi-revenue-today').textContent = earnings.today || '$0.000000';
-    document.getElementById('kpi-revenue-week').textContent = earnings.thisWeek || '$0.000000';
-    document.getElementById('kpi-revenue-month').textContent = earnings.thisMonth || '$0.000000';
-    document.getElementById('kpi-lifetime').textContent = earnings.total || '$0.000000';
+    document.getElementById('kpi-revenue-today').textContent = safeUsd(earnings.today);
+    document.getElementById('kpi-revenue-week').textContent = safeUsd(earnings.thisWeek);
+    document.getElementById('kpi-revenue-month').textContent = safeUsd(earnings.thisMonth);
+    document.getElementById('kpi-lifetime').textContent = safeUsd(earnings.total);
 
-    document.getElementById('earnings-available').textContent = earnings.total || '$0.000000';
+    document.getElementById('earnings-available').textContent = safeUsd(earnings.total);
     document.getElementById('earnings-pending').textContent = '$0.000000';
-    document.getElementById('earnings-lifetime').textContent = earnings.total || '$0.000000';
-    document.getElementById('withdraw-available').textContent = earnings.total || '$0.000000';
+    document.getElementById('earnings-lifetime').textContent = safeUsd(earnings.total);
+    document.getElementById('withdraw-available').textContent = safeUsd(earnings.total);
 
     // Update wallet address in profile form
     const walletInput = document.getElementById('profile-wallet');
@@ -577,8 +600,12 @@
     const amountInput = document.getElementById('withdraw-amount');
 
     allBtn.onclick = () => {
-      const available = parseFloat((dashboardData?.earnings?.total || '$0').replace('$', ''));
-      amountInput.value = available > 0 ? available.toFixed(6) : '0';
+      // earnings.total is a NUMBER from the API (e.g. 0.0146), not a string.
+      // Calling .replace() on a number throws TypeError — coerce to string first.
+      const raw = dashboardData?.earnings?.total;
+      const available = typeof raw === 'number' ? raw : parseFloat(String(raw || 0));
+      const safe = Number.isFinite(available) && available > 0 ? available : 0;
+      amountInput.value = safe.toFixed(6);
       modal.style.display = 'flex';
     };
     cancelBtn.onclick = () => { modal.style.display = 'none'; };
@@ -591,7 +618,26 @@
         statusDiv.innerHTML = `<div class="status-error">✗ Enter a positive amount</div>`;
         return;
       }
-      if (!confirm(`Confirm withdrawal of $${amount.toFixed(6)} USDC to your wallet?`)) return;
+      // Show confirmation as a toast with Cancel/Confirm buttons instead of native confirm()
+      const confirmed = await new Promise((resolve) => {
+        const toast = document.createElement('div');
+        toast.className = 'confirm-toast';
+        toast.innerHTML = `
+          <div class="confirm-toast-body">
+            <div class="confirm-toast-msg">Confirm withdrawal of <strong>$${amount.toFixed(6)} USDC</strong> to your wallet?</div>
+            <div class="confirm-toast-actions">
+              <button class="btn btn-ghost btn-sm" id="confirm-no">Cancel</button>
+              <button class="btn btn-primary btn-sm" id="confirm-yes">Confirm</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(toast);
+        toast.querySelector('#confirm-no').onclick = () => { toast.remove(); resolve(false); };
+        toast.querySelector('#confirm-yes').onclick = () => { toast.remove(); resolve(true); };
+        // Auto-cancel after 30s
+        setTimeout(() => { if (toast.parentNode) { toast.remove(); resolve(false); } }, 30000);
+      });
+      if (!confirmed) return;
       submitBtn.disabled = true;
       submitBtn.textContent = '⏳ Withdrawing…';
       try {
@@ -600,7 +646,12 @@
           body: JSON.stringify({ amountUsd: amount.toString() }),
         });
         const data = await r.json();
-        if (!r.ok) throw new Error(data.error || 'Withdraw failed');
+        if (!r.ok) {
+          const friendly = {
+            insufficient_earnings: `Insufficient earnings. You have $${(data.available != null ? data.available : 0).toFixed(6)} available.`,
+          };
+          throw new Error(friendly[data.error] || data.error || 'Withdraw failed');
+        }
         statusDiv.innerHTML = `<div class="status-success">✓ Withdrawal successful! ${data.arcscanUrl ? `<a href="${data.arcscanUrl}" target="_blank">View on Arcscan ↗</a>` : ''}</div>`;
         showToast(`Withdrawal successful!`, 'success');
         setTimeout(() => {

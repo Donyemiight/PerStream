@@ -103,6 +103,11 @@ const PerStream = (() => {
   async function initListenPage() {
     loadUser();
     setupAuthBar('listen');
+    // Wire up deposit buttons IMMEDIATELY so users can deposit before selecting a track
+    const btnDep = document.getElementById('btn-deposit');
+    const btnDepBig = document.getElementById('btn-deposit-big');
+    if (btnDep) btnDep.onclick = (e) => deposit(1, e.currentTarget);
+    if (btnDepBig) btnDepBig.onclick = (e) => deposit(5, e.currentTarget);
     if (currentUser) {
       await refreshBalance();
     }
