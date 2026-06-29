@@ -91,7 +91,7 @@
 
   const state = {
     currentUser: null,
-    balance: 0,                    // listener's USDC deposit (micro-USDC)
+    balance: (stored && typeof stored.balance === 'number') ? stored.balance : 0,                    // listener's USDC deposit (micro-USDC) — wired to window.__perstream_balance
     creatorEarnings: (stored && stored.creatorEarnings) || 0,  // creator's accumulated earnings (micro-USDC)
     creatorWithdrawn: (stored && stored.creatorWithdrawn) || 0, // cumulative withdrawn (micro-USDC)
     activeSession: null,
@@ -581,17 +581,25 @@
   // ──────────────────────────────────────────────
   function startMeter(track) {
     stopMeter();
+    // Sync from window.__perstream_balance (set by mockSignIn or deposit buttons) into state.balance (micro-USDC)
+    if (typeof window.__perstream_balance === 'number' && state.balance <= 0) {
+      state.balance = Math.round(window.__perstream_balance * 1_000_000);
+    }
     state.meterInterval = setInterval(() => {
       if (!state.activeSession) return;
       const s = state.activeSession;
       if (state.balance < s.pricePerSec) {
         stopMeter();
+        // Reflect on window.__perstream_balance so UI shows 0
+        window.__perstream_balance = 0;
         return;
       }
       state.balance -= s.pricePerSec;
       s.secondsPlayed += 1;
       s.amountPaid += s.pricePerSec;
       state.creatorEarnings += s.pricePerSec;
+      // Mirror to window.__perstream_balance (USDC) so UI updates
+      window.__perstream_balance = state.balance / 1_000_000;
       // Update per-track stats — Issue 3 fix
       const track = DEMO_TRACKS.find(t => t.id === s.trackId);
       if (track) {
