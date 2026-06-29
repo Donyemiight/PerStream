@@ -312,6 +312,7 @@ app.get('/api/health', (req, res) => {
     mode: arc.MODE,
     meter: { active: meter.active() },
     time: Date.now(),
+    currentTunnelUrl: process.env.PUBLIC_TUNNEL_URL || null,
   });
 });
 

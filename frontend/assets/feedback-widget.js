@@ -9,7 +9,11 @@
 (function() {
   'use strict';
 
-  const API_BASE = 'demo';
+  // Use the configured API base (injected by the host page or default to current origin).
+  // window.PERSTREAM_API is set on every deployed HTML page (see PROD build).
+  const API_BASE = (typeof window !== 'undefined' && window.PERSTREAM_API) ||
+                   (typeof window !== 'undefined' && window.location && window.location.origin) ||
+                   '';
 
   // ── Build the widget HTML ──
   function buildWidgetHTML() {
