@@ -21,6 +21,32 @@ const PerStream = (() => {
       window.PERSTREAM_API = newBase;
       localStorage.setItem('perstream_known_tunnel', newBase);
     };
+
+    // Listen for auto-discovery results
+    window.addEventListener('perstream:api-base-changed', (e) => {
+      const newBase = e.detail && e.detail.newBase;
+      if (newBase && newBase !== API_BASE) {
+        console.log('[app] switching API_BASE:', API_BASE, '→', newBase);
+        API_BASE = newBase;
+        window.PERSTREAM_API = newBase;
+        if (typeof loadTracks === 'function') {
+          try { loadTracks(); } catch (err) { console.warn('reload tracks failed:', err); }
+        }
+        if (typeof refreshBalance === 'function') {
+          try { refreshBalance(); } catch {}
+        }
+      }
+    });
+
+    // Poll once for late-arriving discovery
+    setTimeout(() => {
+      if (window.__perstream_discovered && window.__perstream_discovered !== API_BASE) {
+        console.log('[app] late-discovery applying:', window.__perstream_discovered);
+        window.dispatchEvent(new CustomEvent('perstream:api-base-changed', {
+          detail: { newBase: window.__perstream_discovered }
+        }));
+      }
+    }, 1500);
   }
 
   const STORAGE_KEY = 'perstream_user';
