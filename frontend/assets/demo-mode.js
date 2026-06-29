@@ -91,7 +91,7 @@
 
   const state = {
     currentUser: null,
-    balance: 0,                    // listener's USDC deposit (micro-USDC)
+    balance: (stored && typeof stored.balance === 'number') ? stored.balance : 0,                    // listener's USDC deposit (micro-USDC) — wired to window.__perstream_balance
     creatorEarnings: (stored && stored.creatorEarnings) || 0,  // creator's accumulated earnings (micro-USDC)
     creatorWithdrawn: (stored && stored.creatorWithdrawn) || 0, // cumulative withdrawn (micro-USDC)
     activeSession: null,
@@ -249,6 +249,14 @@
       } };;
     }
 
+    // GET /api/listen/balance — listener's demo balance
+    if (method === 'GET' && path === '/api/listen/balance') {
+      const bal = typeof window.__perstream_balance === 'number' ? window.__perstream_balance : 5.0;
+      // Synonym for the page if no specific balance was deposited yet
+      if (typeof window.__perstream_balance !== 'number') window.__perstream_balance = bal;
+      return { body: { balance: Math.round(bal * 1_000_000), balanceUsd: bal.toFixed(6) } };;
+    }
+
     // GET /api/creator/dashboard
     // POST /api/creator/tracks — create track
     if (method === 'POST' && path === '/api/creator/tracks') {
@@ -359,14 +367,42 @@
     }
     if (method === 'GET' && path === '/api/creator/dashboard') {
       const myTracks = DEMO_TRACKS.filter(t => t.creator_id === (state.currentUser?.id || 'demo-creator'));
+      // Use static demo numbers for dashboard (matches FIX 5 spec)
+      const DEMO_TOTAL = 0.042600;
+      const DEMO_AVAILABLE = 0.038100;
+      const DEMO_TODAY = 0.003200;
+      const DEMO_WEEK = 0.018900;
+      const DEMO_MONTH = 0.042600;
       return { body: {
+        mode: 'demo',
         creator: state.currentUser,
-        earningsLive: usd(state.creatorEarnings),
-        earningsRecorded: usd(state.creatorEarnings),
-        available: usd(state.creatorEarnings),
-        withdrawn: usd(state.creatorWithdrawn || 0),
+        profile: state.currentUser ? {
+          handle: state.currentUser.handle,
+          email: state.currentUser.email,
+          wallet_address: state.currentUser.wallet || '0x000',
+          display_name: state.currentUser.handle,
+          bio: '',
+        } : {},
+        earnings: {
+          total: DEMO_TOTAL,
+          available: DEMO_AVAILABLE,
+          today: DEMO_TODAY,
+          thisWeek: DEMO_WEEK,
+          thisMonth: DEMO_MONTH,
+          lifetime: DEMO_MONTH,
+        },
+        analytics: {
+          totalStreams: 748,
+          activeListeners: 0,
+        },
         tracks: myTracks,
         withdrawals: state.withdrawals || [],
+        notifications: [
+          { id: 'n1', message: "🎉 Your 'Cold-Start Cliff' just hit 250 plays!", is_read: false, created_at: new Date(Date.now() - 3600000).toISOString() },
+          { id: 'n2', message: '💸 Withdrawal of $0.004500 completed.', is_read: false, created_at: new Date(Date.now() - 86400000 * 3).toISOString() },
+          { id: 'n3', message: "🏆 You ranked #2 in this week's Lepton leaderboard.", is_read: true, created_at: new Date(Date.now() - 86400000 * 6).toISOString() },
+        ],
+        unreadCount: 2,
         feedback: {
           total: state.feedback.length,
           average: state.feedback.length
@@ -545,17 +581,25 @@
   // ──────────────────────────────────────────────
   function startMeter(track) {
     stopMeter();
+    // Sync from window.__perstream_balance (set by mockSignIn or deposit buttons) into state.balance (micro-USDC)
+    if (typeof window.__perstream_balance === 'number' && state.balance <= 0) {
+      state.balance = Math.round(window.__perstream_balance * 1_000_000);
+    }
     state.meterInterval = setInterval(() => {
       if (!state.activeSession) return;
       const s = state.activeSession;
       if (state.balance < s.pricePerSec) {
         stopMeter();
+        // Reflect on window.__perstream_balance so UI shows 0
+        window.__perstream_balance = 0;
         return;
       }
       state.balance -= s.pricePerSec;
       s.secondsPlayed += 1;
       s.amountPaid += s.pricePerSec;
       state.creatorEarnings += s.pricePerSec;
+      // Mirror to window.__perstream_balance (USDC) so UI updates
+      window.__perstream_balance = state.balance / 1_000_000;
       // Update per-track stats — Issue 3 fix
       const track = DEMO_TRACKS.find(t => t.id === s.trackId);
       if (track) {
