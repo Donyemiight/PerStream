@@ -24,7 +24,7 @@ try { fs.rmSync(TEST_AUDIO, { recursive: true, force: true }); } catch {}
 fs.mkdirSync(TEST_AUDIO, { recursive: true });
 
 // Count expected tests for self-check
-const EXPECTED_TESTS = 19;
+const EXPECTED_TESTS = 21;
 console.log(`[smoke] running ${EXPECTED_TESTS} tests against http://localhost:${process.env.PORT}`);
 console.log(`[smoke] DB: ${TEST_DB}`);
 
@@ -289,13 +289,82 @@ async function main() {
     }
   } catch (e) { fail('publish track', e.message); }
 
-  // 18. Verify published track is in public listing
+  // 18. Upload DRAFT track (should NOT appear in public listing)
+  let draftTrackId;
+  try {
+    // Build multipart manually
+    const boundary = '----PerStreamDraft' + Date.now();
+    const fields = {
+      title: 'Draft Smoke Test',
+      description: 'Should NOT appear publicly',
+      pricePerSec: '150',
+      durationSec: '30',
+      category: 'smoke',
+    };
+    const parts = [];
+    for (const [k, v] of Object.entries(fields)) {
+      parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${k}"\r\n\r\n${v}\r\n`));
+    }
+    const audioBuf = Buffer.from('ID3fake-mp3-content-for-draft-test');
+    parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="audio"; filename="draft.mp3"\r\nContent-Type: audio/mpeg\r\n\r\n`));
+    parts.push(audioBuf);
+    parts.push(Buffer.from(`\r\n--${boundary}--\r\n`));
+    const draftBody = Buffer.concat(parts);
+
+    const draftResp = await new Promise((resolve, reject) => {
+      const r = http.request({
+        method: 'POST',
+        hostname: 'localhost',
+        port: process.env.PORT,
+        path: '/api/creator/tracks?status=draft',
+        headers: {
+          'Content-Type': 'multipart/form-data; boundary=' + boundary,
+          'Content-Length': draftBody.length,
+          'X-User-Id': creatorId,
+        },
+      }, (res) => {
+        let chunks = [];
+        res.on('data', c => chunks.push(c));
+        res.on('end', () => {
+          const text = Buffer.concat(chunks).toString();
+          let json = null;
+          try { json = JSON.parse(text); } catch {}
+          resolve({ status: res.statusCode, body: json });
+        });
+      });
+      r.on('error', reject);
+      r.write(draftBody);
+      r.end();
+    });
+
+    if (draftResp.status === 200 && draftResp.body?.track?.status === 'draft') {
+      draftTrackId = draftResp.body.track.id;
+      pass(`POST /api/creator/tracks?status=draft → track ${draftTrackId.slice(-6)} saved as draft`);
+    } else {
+      fail('draft upload', JSON.stringify(draftResp));
+    }
+  } catch (e) { fail('draft upload', e.message); }
+
+  // 18b. Verify published track is in public listing
   try {
     const r = await req('GET', '/api/tracks');
-    if (r.status === 200 && r.body.tracks.find(t => t.id === publishedTrackId)) {
-      pass(`GET /api/tracks → newly published track is visible publicly`);
-    } else fail('verify published', JSON.stringify(r.body));
-  } catch (e) { fail('verify published', e.message); }
+    const hasPublished = r.body.tracks.find(t => t.id === publishedTrackId);
+    const hasDraft = r.body.tracks.find(t => t.id === draftTrackId);
+    if (r.status === 200 && hasPublished && !hasDraft) {
+      pass(`GET /api/tracks → published visible, draft hidden (public filter works)`);
+    } else fail('verify filter', `published=${!!hasPublished} draft=${!!hasDraft}`);
+  } catch (e) { fail('verify filter', e.message); }
+
+  // 18c. Verify creator's dashboard shows BOTH (including draft)
+  try {
+    const r = await req('GET', '/api/creator/dashboard', null, { 'X-User-Id': creatorId });
+    const allMine = r.body.tracks.filter(t => t.creator_id === creatorId);
+    const hasPublished = allMine.find(t => t.id === publishedTrackId);
+    const hasDraft = allMine.find(t => t.id === draftTrackId);
+    if (r.status === 200 && hasPublished && hasDraft) {
+      pass(`GET /api/creator/dashboard → creator sees both published AND draft tracks`);
+    } else fail('dashboard filter', `published=${!!hasPublished} draft=${!!hasDraft}`);
+  } catch (e) { fail('dashboard filter', e.message); }
 
   // 19. Toggle published → draft → published via status endpoint
   try {

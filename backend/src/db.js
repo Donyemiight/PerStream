@@ -282,10 +282,10 @@ function getUserByWallet(wallet) {
 // Track helpers
 // ───────────────────────────────────────────────
 
-function createTrack({ creatorId, title, description, audioUrl, durationSec, pricePerSec, coverUrl = '' }) {
+function createTrack({ creatorId, title, description, audioUrl, durationSec, pricePerSec, coverUrl = '', category = 'general', status = 'published' }) {
   const id = `trk_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   db.run(
-    `INSERT INTO tracks (id, creator_id, title, description, audio_url, duration_sec, price_per_sec, cover_url, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO tracks (id, creator_id, title, description, audio_url, duration_sec, price_per_sec, cover_url, category, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       String(id),
       String(creatorId),
@@ -295,6 +295,8 @@ function createTrack({ creatorId, title, description, audioUrl, durationSec, pri
       Number(durationSec) || 0,
       Number(pricePerSec) || 0,
       String(coverUrl || ''),
+      String(category || 'general'),
+      String(status || 'published'),
       Date.now()
     ]
   );
@@ -349,10 +351,20 @@ function getTrack(id) {
   return firstRow(stmt);
 }
 
-function listTracks({ creatorId = null, limit = 50 } = {}) {
+function listTracks({ creatorId = null, limit = 50, includeDrafts = false, status = null } = {}) {
+  // When creatorId is provided (creator's own dashboard), include drafts so they see everything they uploaded.
+  // When called publicly (no creatorId), only show published tracks.
   if (creatorId) {
-    const stmt = db.prepare(`SELECT * FROM tracks WHERE creator_id = ? ORDER BY created_at DESC LIMIT ?`);
-    stmt.bind([creatorId, limit]);
+    const where = status ? `creator_id = ? AND status = ?` : `creator_id = ?`;
+    const stmt = db.prepare(`SELECT * FROM tracks WHERE ${where} ORDER BY created_at DESC LIMIT ?`);
+    if (status) stmt.bind([creatorId, status, limit]);
+    else stmt.bind([creatorId, limit]);
+    return rowsFromStmt(stmt);
+  }
+  // Public listing — only published tracks
+  if (!includeDrafts) {
+    const stmt = db.prepare(`SELECT * FROM tracks WHERE status = 'published' ORDER BY created_at DESC LIMIT ?`);
+    stmt.bind([limit]);
     return rowsFromStmt(stmt);
   }
   const stmt = db.prepare(`SELECT * FROM tracks ORDER BY created_at DESC LIMIT ?`);

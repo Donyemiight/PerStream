@@ -215,7 +215,7 @@
         price_per_sec: parseInt(body.pricePerSec, 10) || 100,
         cover_url: body.coverUrl || '',
         category: body.category || 'general',
-        status: body.status || 'published',
+        status: qs.get('status') || body.status || 'published',
         created_at: Date.now(),
         plays: 0,
         earnings_total: 0,

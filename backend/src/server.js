@@ -631,7 +631,9 @@ app.get('/api/creator/withdrawals', authMiddleware, (req, res) => {
 // ===== Create track (upload) =====
 app.post('/api/creator/tracks', authMiddleware, upload.single('audio'), (req, res) => {
   try {
-    const { title, description, category, pricePerSec, status, durationSec } = req.body || {};
+    const { title, description, category, pricePerSec, durationSec } = req.body || {};
+    // Status can come from body (JSON) OR query string (?status=published)
+    const status = req.body.status || req.query.status || 'published';
     if (!title) return res.status(400).json({ error: 'title_required' });
     const price = parseInt(pricePerSec, 10) || 100;
     const audioUrl = req.file ? `/assets/audio/${req.file.filename}` : (req.body.audioUrl || '/assets/loop.mp3');
@@ -648,6 +650,7 @@ app.post('/api/creator/tracks', authMiddleware, upload.single('audio'), (req, re
       category: category || 'general',
       status: status || 'published',
     });
+    console.log(`[upload] creator=${req.user.id} title="${title}" status=${status || 'published'} id=${track.id}`);
     // Notify creator
     db.createNotification({
       userId: req.user.id,
