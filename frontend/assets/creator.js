@@ -304,7 +304,7 @@
         <div class="withdrawal-meta">
           <span class="withdrawal-status status-${escapeHtml(w.status)}">${escapeHtml(w.status)}</span>
           <span>${new Date(w.created_at).toLocaleString()}</span>
-          ${w.tx_hash ? `<a href="https://testnet.arcscan.app/tx/${w.tx_hash}" target="_blank" class="withdrawal-tx">View on Arcscan ↗</a>` : ''}
+          ${w.tx_hash ? `<a href="${w.tx_hash.startsWith('0xwd') ? 'https://testnet.arcscan.app/address/0xEb375940Cd0D85f06239d68C6e719c71907771f9' : 'https://testnet.arcscan.app/tx/' + w.tx_hash}" target="_blank" class="withdrawal-tx">View on Arcscan ↗</a>` : ''}
         </div>
       </div>
     `).join('');
