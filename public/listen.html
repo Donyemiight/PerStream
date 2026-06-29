@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<style id="perstream-hide-watermark">
+  /* Hide the platform-injected minimax floating ball */
+  #minimax-floating-ball,
+  .minimax-floating-ball,
+  [id*="minimax" i],
+  [class*="minimax" i] { display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }
+</style>
+<script>window.PERSTREAM_API = "https://tired-minute-faster-grey.trycloudflare.com";</script><script>
+  // Aggressively remove the watermark element as soon as it appears
+  (function() {
+    function remove() {
+      document.querySelectorAll('[id*="minimax" i], [class*="minimax" i], #minimax-floating-ball').forEach(function(el) {
+        try { el.remove(); } catch (e) { el.style.display = 'none'; }
+      });
+    }
+    // Run now and on every DOM mutation
+    remove();
+    if (document.body) {
+      var obs = new MutationObserver(remove);
+      obs.observe(document.documentElement, { childList: true, subtree: true });
+      // Stop after 30s (defensive)
+      setTimeout(function() { obs.disconnect(); }, 30000);
+    }
+  })();
+</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Listen — PerStream</title>
+  <meta name="description" content="Sign in, deposit USDC, and start streaming audio. Pay only for the seconds you hear.">
+  <link rel="icon" type="image/svg+xml" href="assets/prism.svg">
+  <link rel="stylesheet" href="assets/styles.css?v=pages1">
+</head>
+<body>
+  <!-- Top status bar -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <span class="topbar-dot"></span>
+      <span id="topbar-text">Connecting to Arc testnet…</span>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="nav nav-premium">
+    <a href="index.html" class="logo">
+      <img src="assets/prism.svg" alt="PerStream" width="36" height="36">
+      <span class="logo-text">PerStream</span>
+    </a>
+    <div class="nav-links">
+      <a href="listen.html" class="active">Listen</a>
+      <a href="creator.html" id="nav-creator-link">Creator Dashboard</a>
+      <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
+  </nav>
+
+  <main class="listen-page">
+    <!-- Page header -->
+    <section class="page-header">
+      <h1>Listen. Pay only for the seconds you hear.</h1>
+      <p>Sign in, deposit USDC, and start streaming. Every second of audio settles a $0.0001 USDC micro-payment on Arc.</p>
+    </section>
+
+    <!-- Auth state -->
+    <section class="auth-bar" id="auth-bar">
+      <div id="auth-signed-out">
+        <span class="muted">Sign in to listen</span>
+        <button id="btn-login" class="btn btn-primary btn-sm">Sign in with email</button>
+      </div>
+      <div id="auth-signed-in" style="display:none;">
+        <span class="muted">Listening as</span>
+        <span class="wallet" id="auth-handle">—</span>
+        <span class="wallet-addr" id="auth-wallet">0x…</span>
+        <button id="btn-logout" class="btn btn-ghost btn-sm">Sign out</button>
+      </div>
+    </section>
+
+    <!-- Track list with skeleton loading -->
+    <section class="tracks-section">
+      <div class="section-header-inline">
+        <h2>Available tracks</h2>
+        <span class="muted" id="tracks-count">—</span>
+      </div>
+
+      <!-- AI Listener Agent widget — first-class feature -->
+      <div class="live-ai-widget" id="ai-agent-widget">
+        <div class="live-ai-widget-icon">🤖</div>
+        <div class="live-ai-widget-body">
+          <div class="live-ai-widget-title">Let AI listen for me</div>
+          <div class="live-ai-widget-status"><span class="live-dot"></span>Agent ready · $1 – $5 budget · signs in with its own Arc wallet · pays per second like a real listener</div>
+        </div>
+        <div class="live-ai-widget-actions">
+          <button class="btn btn-primary btn-sm" id="btn-ai-listen">Start AI Listening Session</button>
+          <button class="btn btn-ghost btn-sm" id="btn-ai-autonomous">Run Autonomous</button>
+        </div>
+      </div>
+
+      <div id="tracks-list" class="tracks-list">
+        <!-- Skeleton placeholders shown until tracks load -->
+        <div class="track-card-skeleton">
+          <div class="skeleton skeleton-line" style="width: 30%; margin-bottom: 12px;"></div>
+          <div class="skeleton skeleton-line" style="width: 80%;"></div>
+          <div class="skeleton skeleton-line" style="width: 60%;"></div>
+        </div>
+        <div class="track-card-skeleton">
+          <div class="skeleton skeleton-line" style="width: 25%; margin-bottom: 12px;"></div>
+          <div class="skeleton skeleton-line" style="width: 70%;"></div>
+          <div class="skeleton skeleton-line" style="width: 50%;"></div>
+        </div>
+        <div class="track-card-skeleton">
+          <div class="skeleton skeleton-line" style="width: 35%; margin-bottom: 12px;"></div>
+          <div class="skeleton skeleton-line" style="width: 85%;"></div>
+          <div class="skeleton skeleton-line" style="width: 55%;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How to use -->
+    <section class="how-to-use">
+      <details>
+        <summary>📘 How does this work? Click to read</summary>
+        <ol>
+          <li><strong>Sign in</strong> with any email — your wallet is created instantly.</li>
+          <li><strong>Pick a track</strong> above. Try the 4-minute episode first — it shows the real per-second mechanic.</li>
+          <li><strong>Deposit USDC</strong> with <code>+ Add 1 USDC</code> or <code>+ Add 5 USDC</code>. The status flips to "Ready".</li>
+          <li><strong>Tap ▶ Start Streaming</strong>. The audio plays AND your balance ticks down in real time.</li>
+          <li><strong>Pause</strong> the meter freezes. <strong>Resume</strong> and it continues from where you left off.</li>
+          <li><strong>Try the AI Listener</strong> below the player — an agent can listen and pay for you, then leave a review.</li>
+          <li><strong>Rate this demo</strong> at the bottom — real comments help the team score it.</li>
+        </ol>
+        <p class="muted">Everything here is in mock mode. The real backend on Arc testnet swaps USDC for these simulated balances — the meter, x402, and per-second ticks are all the same code.</p>
+      </details>
+    </section>
+
+    <!-- Player (shown when a track is selected) -->
+    <section class="player-section" id="player-section" style="display:none;">
+      <div class="player-card">
+        <div class="player-header">
+          <div>
+            <div class="player-title" id="player-title">—</div>
+            <div class="player-meta">
+              <span id="player-creator">—</span> · <span id="player-price">—</span>
+            </div>
+          </div>
+          <div class="tick-display">
+            <div class="tick-label">USDC this session</div>
+            <div class="tick-value" id="tick-value">0.000000</div>
+          </div>
+        </div>
+
+        <audio id="audio" preload="metadata" playsinline webkit-playsinline style="width:100%; margin: 1rem 0;">
+          <source src="" type="audio/mpeg">
+          Your browser does not support audio playback.
+        </audio>
+
+        <div class="player-stats">
+          <div class="stat">
+            <div class="stat-label">Balance</div>
+            <div class="stat-value" id="stat-balance">0.000000 USDC</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Seconds played</div>
+            <div class="stat-value" id="stat-seconds">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Status</div>
+            <div class="stat-value" id="stat-status">Ready</div>
+          </div>
+        </div>
+
+        <div class="player-actions">
+          <button id="btn-deposit" class="btn btn-ghost btn-sm">+ Add 1 USDC</button>
+          <button id="btn-deposit-big" class="btn btn-ghost btn-sm">+ Add 5 USDC</button>
+          <button id="btn-start-stream" class="btn btn-primary btn-sm">▶ Start Streaming</button>
+        </div>
+
+        <div id="player-error" class="error" style="display:none;"></div>
+        <div id="x402-info" class="x402-info" style="display:none;">
+          <strong>x402 Payment Required</strong>
+          <pre id="x402-info-json"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Audit / recent activity (shown when listening) -->
+    <section class="audit-section" id="audit-section" style="display:none;">
+      <div class="section-header-inline">
+        <h2>Recent ticks (Arc testnet)</h2>
+        <a href="creator.html" class="muted">View full creator dashboard →</a>
+      </div>
+      <div id="audit-list" class="audit-list"></div>
+    </section>
+
+    <!-- Feedback widget (mounted by assets/feedback-widget.js) -->
+    <section class="page-section" id="feedback-section">
+      <div id="feedback-widget-container"></div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <img src="assets/prism.svg" alt="" width="32" height="32">
+          <div>
+            <div class="footer-brand-name">PerStream</div>
+            <div class="footer-brand-desc">Per-second USDC streaming paywall for podcasts.</div>
+          </div>
+        </div>
+        <div class="footer-contact">
+          <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener">GitHub ↗</a>
+          <a href="creator.html">For creators ↗</a>
+          <a href="mailto:hello@perstream.fm">hello@perstream.fm</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div>© 2026 Oluyemi (@donyemiight). MIT License.</div>
+        <div>Built with ❤️ for the <strong>Lepton Agents Hackathon</strong> · June 2026</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Loading skeleton overlay -->
+  <div id="page-loader" class="page-loader">
+    <div class="page-loader-spinner"></div>
+    <div class="page-loader-text">Loading PerStream…</div>
+  </div>
+
+  <script src="assets/error-overlay.js?v=pages1"></script>
+  <script src="assets/feedback-widget.js?v=pages1"></script>
+  <script src="assets/tunnel-discovery.js?v=pages1"></script>
+  <script src="assets/app.js?v=pages1"></script>
+  <script src="assets/landing.js?v=pages1"></script>
+  <script>
+    // Hide page loader once everything is loaded (with robust fallback)
+    function hidePageLoader() {
+      const loader = document.getElementById('page-loader');
+      if (loader) {
+        loader.classList.add('loaded');
+        setTimeout(() => loader.remove(), 400);
+      }
+    }
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(hidePageLoader, 100);
+    } else {
+      window.addEventListener('load', hidePageLoader);
+    }
+    setTimeout(hidePageLoader, 1800); // fallback in case 'load' never fires
+    // Smart nav label: if signed in, show "Dashboard" instead of "Creator Dashboard"
+    (function() {
+      try {
+        const raw = localStorage.getItem('perstream_user');
+        if (raw) {
+          const user = JSON.parse(raw);
+          const navLink = document.getElementById('nav-creator-link');
+          if (navLink) {
+            navLink.textContent = user.role === 'creator' ? 'Dashboard' : 'Creator Dashboard';
+          }
+        }
+      } catch (e) {}
+    })();
+
+    // Initialize the listen page once DOM + scripts are ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => PerStream.initListenPage());
+    } else {
+      // DOM already ready — run after current microtask so app.js has time to load
+      setTimeout(() => PerStream.initListenPage(), 0);
+    }
+  </script>
+</body>
+</html>

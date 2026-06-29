@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Mode Setup — PerStream</title>
+  <link rel="icon" type="image/svg+xml" href="assets/prism.svg">
+  <link rel="stylesheet" href="assets/styles.css">
+  <style>
+    .setup-container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    .step { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .step h3 { margin: 0 0 0.75rem; color: var(--accent); display: flex; align-items: center; gap: 0.5rem; }
+    .step-num { background: var(--accent); color: white; width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
+    .step code { background: var(--bg); padding: 0.15rem 0.4rem; border-radius: 4px; font-family: ui-monospace, monospace; }
+    .step pre { background: var(--bg); padding: 1rem; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; }
+    .step a { color: var(--accent); }
+    .big-button { display: inline-block; background: var(--accent); color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600; margin: 0.5rem 0; }
+    .big-button:hover { background: var(--accent-2); }
+    .warning { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 0.75rem 1rem; margin: 1rem 0; }
+    .live-check { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 0.75rem 1rem; margin: 1rem 0; }
+    .live-check.hidden { display: none; }
+    .status-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+    .status-row:last-child { border-bottom: none; }
+    .status-value { font-family: ui-monospace, monospace; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="index.html" class="logo">
+      <img src="assets/prism.svg" alt="" width="28" height="28">
+      <span>PerStream</span>
+    </a>
+    <div class="nav-links">
+      <a href="listen.html">Listen</a>
+      <a href="creator.html">For creators</a>
+    </div>
+  </nav>
+
+  <main class="setup-container">
+    <h1>Switch to Live Mode (Arc testnet)</h1>
+    <p class="muted">
+      PerStream runs in <strong>mock mode</strong> by default — every per-second tick is recorded but no real USDC moves.
+      In <strong>live mode</strong>, ticks become real on-chain transactions on Arc testnet, verifiable on
+      <a href="https://testnet.arcscan.app" target="_blank">Arcscan</a>.
+    </p>
+
+    <div id="live-check" class="live-check hidden">
+      <strong>✅ Already in live mode!</strong> The backend is connected to Arc testnet. All ticks are real on-chain transactions.
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">1</span> Get testnet USDC from the Circle Faucet</h3>
+      <p>Visit the Circle Faucet and request 20 USDC on Arc Testnet:</p>
+      <a href="https://faucet.circle.com" target="_blank" class="big-button">Open Circle Faucet →</a>
+      <ol>
+        <li>Select <strong>"USDC"</strong></li>
+        <li>Select <strong>"Arc Testnet"</strong> from the network dropdown</li>
+        <li>Paste the seller address (shown in step 2 below)</li>
+        <li>Click <strong>"Send 20 USDC"</strong></li>
+        <li>Wait ~30 seconds for the transaction to confirm</li>
+      </ol>
+      <p class="muted">The faucet is rate-limited to 20 USDC every 2 hours per address. The seller address below is the one the backend uses to receive on-chain payments.</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">2</span> Get the seller address</h3>
+      <p>The backend's settlement wallet is derived from <code>SETTLEMENT_PRIVATE_KEY</code> in <code>backend/.env</code>. Get its current address:</p>
+      <pre>curl -s https://seas-ing-served-amy.trycloudflare.com/api/audit/stats | python3 -m json.tool</pre>
+      <p>The <code>sellerAddress</code> field is the address you paste into the faucet.</p>
+      <div id="seller-info" class="status-row">
+        <span>Current seller address:</span>
+        <span class="status-value" id="seller-addr">Loading…</span>
+      </div>
+      <div class="status-row">
+        <span>Current USDC balance:</span>
+        <span class="status-value" id="usdc-bal">—</span>
+      </div>
+      <div class="status-row">
+        <span>Current mode:</span>
+        <span class="status-value" id="mode-val">—</span>
+      </div>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">3</span> Activate live mode on the backend</h3>
+      <p>Once the faucet has sent USDC to the seller address, the backend owner (the hackathon submitter) needs to:</p>
+      <pre>ssh user@perstream-host
+cd /workspace/perstream
+# Edit backend/.env and set:
+#   PAYMENTS_MODE=live
+#   SETTLEMENT_PRIVATE_KEY=0x_your_funded_key
+pkill -f "node src/server"
+cd backend
+nohup env PAYMENTS_MODE=live PORT=3000 node src/server.js &</pre>
+      <p>Refresh this page — if "Already in live mode!" appears at the top, you're done.</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-num">4</span> Verify on Arcscan</h3>
+      <p>After the backend is in live mode, every per-second tick produces a real on-chain transaction. To verify:</p>
+      <ol>
+        <li>Open <a href="listen.html">listen.html</a>, sign in, pick a track, deposit, and start streaming</li>
+        <li>Open <a href="creator.html">creator.html</a>, sign in as the demo creator</li>
+        <li>Scroll to <strong>"🔍 On-chain audit trail"</strong></li>
+        <li>Each tick now has a clickable Arcscan link — click it to see the real transaction on Arc</li>
+      </ol>
+      <p>You can also view the seller wallet directly:</p>
+      <a id="arcscan-link" href="https://testnet.arcscan.app" target="_blank" class="big-button">View seller on Arcscan →</a>
+    </div>
+
+    <div class="warning">
+      <strong>⏱️ Time required:</strong> 3 minutes if you have Circle account + private key. 10 minutes if you need to set up a new wallet.
+    </div>
+
+    <div class="warning">
+      <strong>🛡️ For hackathon judges:</strong> The mock-mode demo is fully functional and shows the per-second mechanic. Live mode is bonus — if you want to see the real on-chain transactions, just fund the seller address above and refresh.
+    </div>
+  </main>
+
+  <script>window.PERSTREAM_API = "https://tired-minute-faster-grey.trycloudflare.com";</script><script>
+    // Load current seller address and mode
+    fetch('api/audit/stats')
+      .then(r => r.json())
+      .then(d => {
+        document.getElementById('mode-val').textContent = d.mode;
+        document.getElementById('seller-addr').textContent = d.sellerAddress || 'Not configured (mock mode)';
+        if (d.sellerAddress) {
+          document.getElementById('arcscan-link').href = 'https://testnet.arcscan.app/address/' + d.sellerAddress;
+        }
+        if (d.mode === 'live') {
+          document.getElementById('live-check').classList.remove('hidden');
+        }
+        // Try to get the USDC balance
+        return fetch('https://testnet.arcscan.app/api/v2/addresses/' + (d.sellerAddress || ''))
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null);
+      })
+      .then(addrData => {
+        if (addrData && addrData.coin_balance) {
+          const usdcBalance = (parseInt(addrData.coin_balance) / 1e6).toFixed(2);
+          document.getElementById('usdc-bal').textContent = usdcBalance + ' USDC';
+        } else {
+          document.getElementById('usdc-bal').textContent = 'Could not fetch (CORS-blocked)';
+        }
+      })
+      .catch(e => {
+        document.getElementById('seller-addr').textContent = 'Error: ' + e.message;
+      });
+  </script>
+</body>
+</html>

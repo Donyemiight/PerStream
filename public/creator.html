@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<style id="perstream-hide-watermark">
+  /* Hide the platform-injected minimax floating ball */
+  #minimax-floating-ball,
+  .minimax-floating-ball,
+  [id*="minimax" i],
+  [class*="minimax" i] { display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }
+</style>
+<script>window.PERSTREAM_API = "https://tired-minute-faster-grey.trycloudflare.com";</script><script>
+  // Aggressively remove the watermark element as soon as it appears
+  (function() {
+    function remove() {
+      document.querySelectorAll('[id*="minimax" i], [class*="minimax" i], #minimax-floating-ball').forEach(function(el) {
+        try { el.remove(); } catch (e) { el.style.display = 'none'; }
+      });
+    }
+    // Run now and on every DOM mutation
+    remove();
+    if (document.body) {
+      var obs = new MutationObserver(remove);
+      obs.observe(document.documentElement, { childList: true, subtree: true });
+      // Stop after 30s (defensive)
+      setTimeout(function() { obs.disconnect(); }, 30000);
+    }
+  })();
+</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creator Dashboard — PerStream</title>
+  <meta name="description" content="Manage your PerStream tracks, view earnings, and withdraw USDC. The full creator workflow for the per-second streaming paywall.">
+  <link rel="icon" type="image/svg+xml" href="assets/prism.svg">
+  <link rel="stylesheet" href="assets/styles.css?v=pages1">
+</head>
+<body class="creator-page">
+  <!-- Top status bar -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <span class="topbar-dot"></span>
+      <span id="topbar-text">Connecting to Arc testnet…</span>
+      <span class="topbar-spacer"></span>
+      <span id="topbar-notifications" class="topbar-notifications" aria-label="Notifications"></span>
+      <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener" class="topbar-link">⭐ Star on GitHub</a>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="nav nav-premium">
+    <a href="index.html" class="logo">
+      <img src="assets/prism.svg" alt="PerStream" width="36" height="36">
+      <span class="logo-text">PerStream</span>
+    </a>
+    <div class="nav-links">
+      <a href="listen.html">Listen</a>
+      <a href="creator.html" class="active">Creator Dashboard</a>
+      <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
+  </nav>
+
+  <main class="creator-main">
+    <!-- Auth bar -->
+    <section class="auth-bar" id="auth-bar">
+      <div id="auth-signed-out">
+        <span class="muted">Sign in as creator</span>
+        <button id="btn-login" class="btn btn-primary btn-sm">Sign in with email</button>
+      </div>
+      <div id="auth-signed-in" style="display:none;">
+        <span class="muted">Creator:</span>
+        <span class="wallet" id="auth-handle">—</span>
+        <span class="wallet-addr" id="auth-wallet">0x…</span>
+        <button id="btn-logout" class="btn btn-ghost btn-sm">Sign out</button>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- HERO + ANALYTICS                                            -->
+    <!-- ============================================================ -->
+    <section class="page-header creator-hero" id="dashboard">
+      <h1>Earn from listener #1.</h1>
+      <p>Every tick of every track settles on Arc testnet. Real-time earnings, real-time audit trail.</p>
+      <div id="mode-banner" class="mode-banner" style="display:none;"></div>
+    </section>
+
+    <!-- Analytics cards row -->
+    <section class="dashboard-cards-grid" id="analytics-cards">
+      <div class="dashboard-card glass-card">
+        <div class="dashboard-card-label">Total earned</div>
+        <div class="dashboard-card-value" id="kpi-total-earned">$0.000000</div>
+        <div class="dashboard-card-sub">All-time USDC from ticks</div>
+      </div>
+      <div class="dashboard-card glass-card">
+        <div class="dashboard-card-label">Available to withdraw</div>
+        <div class="dashboard-card-value" id="kpi-available">$0.000000</div>
+        <div class="dashboard-card-sub" id="kpi-available-sub">Calculated from tick ledger</div>
+      </div>
+      <div class="dashboard-card glass-card">
+        <div class="dashboard-card-label">Total streams</div>
+        <div class="dashboard-card-value" id="kpi-streams">0</div>
+        <div class="dashboard-card-sub" id="kpi-streams-sub">Across all tracks</div>
+      </div>
+      <div class="dashboard-card glass-card">
+        <div class="dashboard-card-label">Active listeners</div>
+        <div class="dashboard-card-value" id="kpi-active">0</div>
+        <div class="dashboard-card-sub">Streaming right now</div>
+      </div>
+    </section>
+
+    <!-- Revenue analytics row -->
+    <section class="dashboard-secondary-grid">
+      <div class="dashboard-secondary-card glass-card">
+        <div class="dashboard-secondary-title">Revenue today</div>
+        <div class="dashboard-secondary-value" id="kpi-revenue-today">$0.000000</div>
+      </div>
+      <div class="dashboard-secondary-card glass-card">
+        <div class="dashboard-secondary-title">Revenue this week</div>
+        <div class="dashboard-secondary-value" id="kpi-revenue-week">$0.000000</div>
+      </div>
+      <div class="dashboard-secondary-card glass-card">
+        <div class="dashboard-secondary-title">Revenue this month</div>
+        <div class="dashboard-secondary-value" id="kpi-revenue-month">$0.000000</div>
+      </div>
+      <div class="dashboard-secondary-card glass-card">
+        <div class="dashboard-secondary-title">Lifetime earnings</div>
+        <div class="dashboard-secondary-value" id="kpi-lifetime">$0.000000</div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- MY TRACKS — Upload + manage                                -->
+    <!-- ============================================================ -->
+    <section class="creator-section" id="tracks">
+      <div class="section-header-inline">
+        <h2>My tracks</h2>
+        <button id="btn-show-upload" class="btn btn-primary btn-sm">+ Upload track</button>
+      </div>
+
+      <!-- Search + filter + sort -->
+      <div class="creator-toolbar glass-card">
+        <input type="text" id="track-search" class="creator-input" placeholder="🔍 Search tracks…" />
+        <select id="track-filter-category" class="creator-input">
+          <option value="">All categories</option>
+          <option value="tech">Tech</option>
+          <option value="crypto">Crypto</option>
+          <option value="music">Music</option>
+          <option value="comedy">Comedy</option>
+          <option value="education">Education</option>
+          <option value="general">General</option>
+        </select>
+        <select id="track-filter-status" class="creator-input">
+          <option value="">All status</option>
+          <option value="published">Published</option>
+          <option value="draft">Draft</option>
+          <option value="unlisted">Unlisted</option>
+        </select>
+        <select id="track-sort" class="creator-input">
+          <option value="newest">Newest</option>
+          <option value="earnings">By earnings</option>
+          <option value="popularity">By plays</option>
+          <option value="title">By title</option>
+        </select>
+      </div>
+
+      <!-- Upload form (hidden by default) -->
+      <div id="upload-form-card" class="upload-card glass-card" style="display:none;">
+        <div class="section-header-inline">
+          <h3>Upload new track</h3>
+          <button id="btn-cancel-upload" class="btn btn-ghost btn-sm">Cancel</button>
+        </div>
+        <form id="upload-form" enctype="multipart/form-data">
+          <div class="form-row">
+            <label class="form-label">Title *</label>
+            <input type="text" name="title" required class="form-input" placeholder="Episode title" />
+          </div>
+          <div class="form-row">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-input" rows="3" placeholder="What is this episode about?"></textarea>
+          </div>
+          <div class="form-row-grid">
+            <div class="form-row">
+              <label class="form-label">Category</label>
+              <select name="category" class="form-input">
+                <option value="tech">Tech</option>
+                <option value="crypto">Crypto</option>
+                <option value="music">Music</option>
+                <option value="comedy">Comedy</option>
+                <option value="education">Education</option>
+                <option value="general">General</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Price (USDC per second)</label>
+              <input type="number" name="pricePerSec" min="1" max="10000" value="100" class="form-input" />
+              <div class="form-hint">100 micro-USDC = $0.0001/sec (≈ $0.36/hour)</div>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Duration (sec)</label>
+              <input type="number" name="durationSec" min="1" value="60" class="form-input" />
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Audio file *</label>
+            <input type="file" name="audio" accept=".mp3,.wav,.m4a,audio/*" required class="form-input-file" />
+            <div class="form-hint">MP3, WAV, or M4A · max 50MB</div>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Cover image (optional)</label>
+            <input type="file" name="cover" accept="image/*" class="form-input-file" />
+          </div>
+          <div id="upload-progress" class="upload-progress" style="display:none;">
+            <div class="upload-progress-bar" id="upload-progress-bar"></div>
+            <div class="upload-progress-text" id="upload-progress-text">Uploading…</div>
+          </div>
+          <div id="upload-status" class="upload-status"></div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-xl btn-ripple" id="btn-upload-submit">
+              <span class="btn-content">Publish track</span>
+            </button>
+            <button type="button" class="btn btn-ghost" id="btn-save-draft">Save as draft</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Track list -->
+      <div id="tracks-list" class="creator-tracks-list">
+        <div class="track-card-skeleton"><div class="skeleton skeleton-line" style="width: 80%;"></div><div class="skeleton skeleton-line" style="width: 60%;"></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- EARNINGS + WITHDRAW                                         -->
+    <!-- ============================================================ -->
+    <section class="creator-section" id="earnings">
+      <h2>Earnings & withdrawals</h2>
+      <div class="earnings-grid">
+        <div class="earnings-wallet glass-card">
+          <div class="earnings-wallet-title">Available balance</div>
+          <div class="earnings-wallet-value" id="earnings-available">$0.000000</div>
+          <div class="earnings-wallet-sub">USDC ready to withdraw</div>
+          <button id="btn-withdraw-all" class="btn btn-primary btn-xl btn-ripple">
+            <span class="btn-content">Withdraw to wallet</span>
+          </button>
+        </div>
+        <div class="earnings-wallet glass-card">
+          <div class="earnings-wallet-title">Pending balance</div>
+          <div class="earnings-wallet-value" id="earnings-pending">$0.000000</div>
+          <div class="earnings-wallet-sub">In-flight withdrawals</div>
+        </div>
+        <div class="earnings-wallet glass-card">
+          <div class="earnings-wallet-title">Total lifetime</div>
+          <div class="earnings-wallet-value" id="earnings-lifetime">$0.000000</div>
+          <div class="earnings-wallet-sub">All-time earnings</div>
+        </div>
+      </div>
+
+      <!-- Withdrawal modal -->
+      <div id="withdraw-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-card glass-card">
+          <h3>Withdraw earnings</h3>
+          <p class="muted">Send USDC to your wallet address on Arc testnet.</p>
+          <form id="withdraw-form">
+            <div class="form-row">
+              <label class="form-label">Amount (USDC)</label>
+              <input type="number" id="withdraw-amount" step="0.000001" min="0.000001" class="form-input" required />
+              <div class="form-hint">Available: <span id="withdraw-available">$0.000000</span></div>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Wallet address</label>
+              <input type="text" id="withdraw-wallet" class="form-input" readonly />
+              <div class="form-hint">All withdrawals go to your creator wallet on Arc testnet.</div>
+            </div>
+            <div id="withdraw-status" class="upload-status"></div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary btn-xl btn-ripple" id="btn-withdraw-submit">
+                <span class="btn-content">Confirm withdrawal</span>
+              </button>
+              <button type="button" class="btn btn-ghost" id="btn-cancel-withdraw">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Withdrawals history -->
+      <h3 class="creator-subhead">Withdrawal history</h3>
+      <div id="withdrawals-list" class="withdrawals-list">
+        <div class="empty-state">
+          <div class="empty-state-icon">💰</div>
+          <div class="empty-state-title">No withdrawals yet</div>
+          <div class="empty-state-message">When you withdraw USDC, the transactions appear here with Arcscan links.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- NOTIFICATIONS                                                -->
+    <!-- ============================================================ -->
+    <section class="creator-section" id="notifications">
+      <h2>Notifications</h2>
+      <div id="notifications-list" class="notifications-list">
+        <div class="empty-state">
+          <div class="empty-state-icon">🔔</div>
+          <div class="empty-state-title">All caught up</div>
+          <div class="empty-state-message">New payments, withdrawals, and uploads will appear here.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- PROFILE                                                     -->
+    <!-- ============================================================ -->
+    <section class="creator-section" id="profile">
+      <h2>Creator profile</h2>
+      <div class="profile-card glass-card">
+        <form id="profile-form">
+          <div class="form-row-grid">
+            <div class="form-row">
+              <label class="form-label">Display name</label>
+              <input type="text" name="displayName" class="form-input" placeholder="Your creator name" />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Profile picture URL</label>
+              <input type="url" name="avatarUrl" class="form-input" placeholder="https://..." />
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Bio</label>
+            <textarea name="bio" rows="3" class="form-input" placeholder="Tell listeners about yourself"></textarea>
+          </div>
+          <div class="form-row-grid">
+            <div class="form-row">
+              <label class="form-label">Twitter / X</label>
+              <input type="text" name="twitter" class="form-input" placeholder="@handle" />
+            </div>
+            <div class="form-row">
+              <label class="form-label">GitHub</label>
+              <input type="text" name="github" class="form-input" placeholder="username" />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Website</label>
+              <input type="url" name="website" class="form-input" placeholder="https://..." />
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Payout wallet (Arc testnet)</label>
+            <input type="text" name="walletAddress" class="form-input" readonly id="profile-wallet" />
+            <div class="form-hint">This is your creator wallet. Earnings are sent here.</div>
+          </div>
+          <div id="profile-status" class="upload-status"></div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-xl btn-ripple">
+              <span class="btn-content">Save profile</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Most streamed tracks -->
+    <section class="creator-section">
+      <h2>Most streamed tracks</h2>
+      <div id="most-streamed-list" class="creator-tracks-list">
+        <div class="track-card-skeleton"><div class="skeleton skeleton-line" style="width: 70%;"></div></div>
+      </div>
+    </section>
+
+    <!-- Feedback widget (mounted by assets/feedback-widget.js) -->
+    <section class="page-section" id="feedback-section">
+      <div id="feedback-widget-container"></div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <img src="assets/prism.svg" alt="" width="40" height="40">
+          <div>
+            <div class="footer-brand-name">PerStream Creator</div>
+            <div class="footer-brand-desc">Per-second USDC streaming paywall for podcasts and long-form audio.</div>
+          </div>
+        </div>
+        <div class="footer-cols">
+          <div class="footer-col">
+            <div class="footer-col-title">Project</div>
+            <a href="https://github.com/Donyemiight/PerStream" target="_blank" rel="noopener">GitHub ↗</a>
+            <a href="listen.html">Live Demo ↗</a>
+            <a href="index.html">Landing ↗</a>
+          </div>
+          <div class="footer-col">
+            <div class="footer-col-title">Resources</div>
+            <a href="https://testnet.arcscan.app" target="_blank" rel="noopener">Arc testnet ↗</a>
+            <a href="https://faucet.circle.com" target="_blank" rel="noopener">USDC faucet ↗</a>
+          </div>
+          <div class="footer-col">
+            <div class="footer-col-title">Contact</div>
+            <a href="mailto:hello@perstream.fm">hello@perstream.fm</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-middle">
+        <div class="footer-version">v0.1.0 · Build 2026.06.28</div>
+      </div>
+      <div class="footer-bottom">
+        <div>© 2026 Oluyemi (@donyemiight). Released under MIT License.</div>
+        <div>Built with ❤️ for the <strong>Lepton Agents Hackathon</strong> · June 2026</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Loading skeleton overlay -->
+  <div id="page-loader" class="page-loader">
+    <div class="page-loader-spinner"></div>
+    <div class="page-loader-text">Loading dashboard…</div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <script src="assets/error-overlay.js?v=pages1"></script>
+  
+  <script src="assets/feedback-widget.js?v=pages1"></script>
+  <script src="assets/tunnel-discovery.js?v=pages1"></script>
+<script src="assets/landing.js?v=pages1"></script>
+  <script src="assets/creator.js?v=pages1"></script>
+  <script>
+    // Hide page loader once everything is loaded (with robust fallback)
+    function hidePageLoader() {
+      const loader = document.getElementById('page-loader');
+      if (loader) {
+        loader.classList.add('loaded');
+        setTimeout(() => loader.remove(), 400);
+      }
+    }
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(hidePageLoader, 100);
+    } else {
+      window.addEventListener('load', hidePageLoader);
+    }
+    setTimeout(hidePageLoader, 1800); // fallback in case 'load' never fires
+    // Initialize creator page
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        if (typeof CreatorDashboard !== 'undefined') CreatorDashboard.init();
+      });
+    } else {
+      setTimeout(() => {
+        if (typeof CreatorDashboard !== 'undefined') CreatorDashboard.init();
+      }, 0);
+    }
+  </script>
+</body>
+</html>
