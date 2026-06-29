@@ -118,16 +118,167 @@ app.use('/api/', rateLimit({
 // Audio upload dir
 if (!fs.existsSync(AUDIO_DIR)) fs.mkdirSync(AUDIO_DIR, { recursive: true });
 
+// Cover image upload dir
+const COVER_DIR = path.join(__dirname, '..', 'data', 'covers');
+if (!fs.existsSync(COVER_DIR)) fs.mkdirSync(COVER_DIR, { recursive: true });
+
+// Allowed audio MIME types
+const ALLOWED_AUDIO_MIMES = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/wave', 'audio/mp4', 'audio/x-m4a', 'audio/m4a', 'audio/aac', 'audio/ogg'];
+const ALLOWED_AUDIO_EXTS = ['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.oga', '.flac'];
+const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+const ALLOWED_IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'];
+
+function fileFilterFor(field, allowedMimes, allowedExts) {
+  return (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const mime = (file.mimetype || '').toLowerCase();
+    if (!allowedExts.includes(ext) && !allowedMimes.includes(mime)) {
+      return cb(Object.assign(new Error(`unsupported_file_format: ${field} (got ${mime || 'unknown'}, ext=${ext || 'none'})`), { status: 400, code: 'UNSUPPORTED_FORMAT' }));
+    }
+    cb(null, true);
+  };
+}
+
 const upload = multer({
   storage: multer.diskStorage({
-    destination: AUDIO_DIR,
+    destination: (req, file, cb) => {
+      // Route by field name: audio → AUDIO_DIR, cover → COVER_DIR
+      const dir = file.fieldname === 'cover' ? COVER_DIR : AUDIO_DIR;
+      cb(null, dir);
+    },
     filename: (req, file, cb) => {
+      const prefix = file.fieldname === 'cover' ? 'cover' : 'audio';
       const ext = path.extname(file.originalname) || '.mp3';
-      cb(null, `audio_${Date.now()}_${Math.random().toString(36).slice(2, 8)}${ext}`);
+      cb(null, `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}${ext}`);
     },
   }),
-  limits: { fileSize: MAX_AUDIO_BYTES },
+  limits: {
+    fileSize: MAX_AUDIO_BYTES,
+    files: 2, // at most one audio + one cover
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.fieldname === 'cover') {
+      return fileFilterFor('cover', ALLOWED_IMAGE_MIMES, ALLOWED_IMAGE_EXTS)(req, file, cb);
+    }
+    return fileFilterFor('audio', ALLOWED_AUDIO_MIMES, ALLOWED_AUDIO_EXTS)(req, file, cb);
+  },
 });
+
+// Multer error handler — returns clean 400 instead of 500 for client errors
+function handleUpload(req, res, next) {
+  const handler = upload.fields([
+    { name: 'audio', maxCount: 1 },
+    { name: 'cover', maxCount: 1 },
+  ]);
+  handler(req, res, (err) => {
+    if (!err) return next();
+    console.error('[upload] multer error:', err.code || err.name, '-', err.message);
+    if (err instanceof multer.MulterError) {
+      const map = {
+        LIMIT_FILE_SIZE: { status: 413, code: 'file_too_large', message: `File too large (max ${Math.floor(MAX_AUDIO_BYTES / 1024 / 1024)}MB)` },
+        LIMIT_FILE_COUNT: { status: 400, code: 'too_many_files', message: 'Too many files (max 2: one audio + one cover)' },
+        LIMIT_UNEXPECTED_FIELD: { status: 400, code: 'unexpected_field', message: `Unexpected field: ${err.field}` },
+        LIMIT_PART_COUNT: { status: 400, code: 'too_many_parts', message: 'Too many multipart parts' },
+        LIMIT_FIELD_KEY: { status: 400, code: 'field_name_too_long', message: 'Field name too long' },
+        LIMIT_FIELD_VALUE: { status: 400, code: 'field_value_too_long', message: 'Field value too long' },
+        LIMIT_FIELD_COUNT: { status: 400, code: 'too_many_fields', message: 'Too many fields' },
+      };
+      const m = map[err.code] || { status: 400, code: err.code, message: err.message };
+      return res.status(m.status).json({ error: m.code, reason: m.message });
+    }
+    // Custom validation errors (from fileFilter)
+    if (err.code === 'UNSUPPORTED_FORMAT' || err.message?.startsWith('unsupported_file_format')) {
+      return res.status(400).json({ error: 'unsupported_file_format', reason: err.message });
+    }
+    next(err);
+  });
+}
+
+// Estimate audio duration from file header.
+// Supports MP3 (frames), WAV (header), MP4/M4A (mdat).
+// Returns seconds (number) or null if can't determine.
+function estimateAudioDuration(filePath, mime) {
+  try {
+    const stat = fs.statSync(filePath);
+    const fd = fs.openSync(filePath, 'r');
+    const buf = Buffer.alloc(Math.min(stat.size, 65536));
+    fs.readSync(fd, buf, 0, buf.length, 0);
+    fs.closeSync(fd);
+
+    // WAV: RIFF header — "RIFF".... "WAVE".... "fmt "... sampleRate, byteRate, dataSize
+    if (buf.slice(0, 4).toString() === 'RIFF' && buf.slice(8, 12).toString() === 'WAVE') {
+      // Find "fmt " chunk
+      let offset = 12;
+      while (offset < buf.length - 8) {
+        const id = buf.slice(offset, offset + 4).toString();
+        const size = buf.readUInt32LE(offset + 4);
+        if (id === 'fmt ') {
+          const sampleRate = buf.readUInt32LE(offset + 8 + 4);
+          const byteRate = buf.readUInt32LE(offset + 8 + 8);
+          // Find data chunk to get size
+          let dataOffset = offset + 8 + size;
+          while (dataOffset < buf.length - 8) {
+            const did = buf.slice(dataOffset, dataOffset + 4).toString();
+            const dsize = buf.readUInt32LE(dataOffset + 4);
+            if (did === 'data' && byteRate > 0) {
+              return Math.round(dsize / byteRate);
+            }
+            dataOffset += 8 + dsize;
+          }
+        }
+        offset += 8 + size;
+      }
+    }
+
+    // MP3: scan for sync bytes 0xFF 0xFB/0xF3/0xF2 and compute frame duration
+    if (buf.slice(0, 3).toString() === 'ID3' || (buf[0] === 0xFF && (buf[1] & 0xE0) === 0xE0)) {
+      // Skip ID3v2 header if present
+      let pos = 0;
+      if (buf.slice(0, 3).toString() === 'ID3') {
+        const size = ((buf[6] & 0x7f) << 21) | ((buf[7] & 0x7f) << 14) | ((buf[8] & 0x7f) << 7) | (buf[9] & 0x7f);
+        pos = 10 + size;
+      }
+      // Find first valid frame
+      while (pos < buf.length - 4) {
+        if (buf[pos] === 0xFF && (buf[pos + 1] & 0xE0) === 0xE0) {
+          // Parse MPEG frame header
+          const mpegVersion = (buf[pos + 1] >> 3) & 3; // 0=MPEG2.5, 2=MPEG2, 3=MPEG1
+          const layer = (buf[pos + 1] >> 1) & 3;       // 1=Layer3, 2=Layer2, 3=Layer1
+          const bitrateIdx = (buf[pos + 2] >> 4) & 0xF;
+          const sampleRateIdx = (buf[pos + 2] >> 2) & 3;
+          const mpeg1 = mpegVersion === 3;
+          const bitrates = [
+            [], [],
+            [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, -1], // MPEG1 Layer3
+            [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, -1],
+          ];
+          const sampleRates = mpeg1 ? [44100, 48000, 32000, -1] : [22050, 24000, 16000, -1];
+          if (layer === 1 && mpeg1 && bitrateIdx > 0 && bitrateIdx < 15 && sampleRateIdx < 3) {
+            const bitrate = bitrates[2][bitrateIdx] * 1000;
+            const sampleRate = sampleRates[sampleRateIdx];
+            if (bitrate > 0 && sampleRate > 0) {
+              // MP3 frame is 1152 samples
+              const frameSamples = 1152;
+              const frameSize = Math.floor((frameSamples / 8 * bitrate) / sampleRate);
+              const totalFrames = (stat.size - pos) / frameSize;
+              return Math.round(totalFrames * frameSamples / sampleRate);
+            }
+          }
+        }
+        pos++;
+      }
+    }
+
+    // Fallback: assume ~128 kbps MP3
+    if (mime && mime.includes('audio')) {
+      const estBitrate = 128000;
+      return Math.round((stat.size * 8) / estBitrate);
+    }
+  } catch (e) {
+    console.warn('[duration] estimate failed:', e.message);
+  }
+  return null;
+}
 
 // ───────────────────────────────────────────────
 // Auth helper (lightweight — uses X-User-Id header)
@@ -267,33 +418,51 @@ app.get('/api/tracks/:id', (req, res) => {
   });
 });
 
-app.post('/api/tracks', authMiddleware, upload.single('audio'), (req, res) => {
+app.post('/api/tracks', authMiddleware, handleUpload, (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'audio_file_required' });
+    const audioFile = req.files?.audio?.[0];
+    const coverFile = req.files?.cover?.[0];
+    if (!audioFile) return res.status(400).json({ error: 'audio_file_required', reason: 'Audio file is required' });
     if (req.user.role !== 'creator' && req.user.role !== 'listener') {
       // Auto-promote to creator on first upload
       // (skipped — left as a flag for v2: db.db.prepare("UPDATE users SET role='creator' WHERE id=?").run(req.user.id))
     }
 
     const { title, description = '', pricePerSecUsd = '0.0003', durationSec = 0 } = req.body || {};
-    if (!title) return res.status(400).json({ error: 'title_required' });
+    if (!title || !title.trim()) {
+      cleanupFiles(req.files);
+      return res.status(400).json({ error: 'title_required', reason: 'Title is required' });
+    }
 
     const priceMicroUsdc = arc.usdToMicro(parseFloat(pricePerSecUsd));
-    const audioUrl = `/api/tracks/audio/${path.basename(req.file.path)}`;
+    const audioUrl = `/api/tracks/audio/${audioFile.filename}`;
+    const coverUrl = coverFile ? `/api/covers/${coverFile.filename}` : '';
+
+    // Auto-detect duration if not provided
+    let dur = parseInt(durationSec, 10);
+    if (isNaN(dur) || dur <= 0) {
+      const detected = estimateAudioDuration(audioFile.path, audioFile.mimetype);
+      dur = detected || 30;
+      console.log(`[upload] auto-detected duration: ${dur}s`);
+    }
 
     const track = db.createTrack({
       creatorId: req.user.id,
-      title,
+      title: title.trim(),
       description,
       audioUrl,
-      durationSec: parseInt(durationSec, 10) || 0,
+      durationSec: dur,
       pricePerSec: priceMicroUsdc,
+      coverUrl,
+      category: 'general',
+      status: 'published',
     });
 
     res.json({ track });
   } catch (err) {
-    console.error('upload error:', err);
-    res.status(500).json({ error: err.message });
+    console.error('upload error:', err.message, err.stack);
+    if (req.files) cleanupFiles(req.files);
+    res.status(500).json({ error: 'upload_failed', reason: err.message });
   }
 });
 
@@ -652,28 +821,82 @@ app.get('/api/creator/withdrawals', authMiddleware, (req, res) => {
 });
 
 // ===== Create track (upload) =====
-app.post('/api/creator/tracks', authMiddleware, upload.single('audio'), (req, res) => {
+app.post('/api/creator/tracks', authMiddleware, handleUpload, (req, res) => {
   try {
     const { title, description, category, pricePerSec, durationSec } = req.body || {};
     // Status can come from body (JSON) OR query string (?status=published)
     const status = req.body.status || req.query.status || 'published';
-    if (!title) return res.status(400).json({ error: 'title_required' });
-    const price = parseInt(pricePerSec, 10) || 100;
-    const audioUrl = req.file ? `/api/tracks/audio/${req.file.filename}` : (req.body.audioUrl || '/assets/loop.mp3');
-    const coverUrl = req.body.coverUrl || '';
-    const dur = parseInt(durationSec, 10) || 30;
+
+    // Validate title (required, non-empty)
+    if (!title || !title.trim()) {
+      // Clean up any uploaded files
+      if (req.files) cleanupFiles(req.files);
+      return res.status(400).json({ error: 'title_required', reason: 'Title is required and cannot be empty' });
+    }
+    if (title.length > 200) {
+      if (req.files) cleanupFiles(req.files);
+      return res.status(400).json({ error: 'title_too_long', reason: 'Title must be 200 characters or less' });
+    }
+
+    // Extract files (handleUpload uses upload.fields())
+    const audioFile = req.files?.audio?.[0];
+    const coverFile = req.files?.cover?.[0];
+
+    if (!audioFile && !req.body.audioUrl) {
+      return res.status(400).json({ error: 'audio_file_required', reason: 'You must upload an audio file (MP3, WAV, or M4A)' });
+    }
+
+    // Validate price
+    const priceRaw = parseInt(pricePerSec, 10);
+    if (pricePerSec !== undefined && (isNaN(priceRaw) || priceRaw < 1 || priceRaw > 10000)) {
+      if (req.files) cleanupFiles(req.files);
+      return res.status(400).json({ error: 'invalid_price', reason: 'Price per second must be between 1 and 10000 micro-USDC' });
+    }
+    const price = isNaN(priceRaw) ? 100 : priceRaw;
+
+    // Validate category
+    const validCategories = ['tech', 'crypto', 'music', 'comedy', 'education', 'general'];
+    const cat = category && validCategories.includes(category) ? category : 'general';
+
+    // Validate duration — prefer user-provided, else auto-detect from file
+    let dur = parseInt(durationSec, 10);
+    if (isNaN(dur) || dur <= 0) {
+      // Try to auto-detect
+      if (audioFile) {
+        const detected = estimateAudioDuration(audioFile.path, audioFile.mimetype);
+        if (detected && detected > 0) {
+          dur = detected;
+          console.log(`[upload] auto-detected duration: ${dur}s for ${audioFile.originalname}`);
+        } else {
+          dur = 30; // sensible fallback
+          console.log(`[upload] could not auto-detect duration, defaulting to 30s`);
+        }
+      } else {
+        dur = 30;
+      }
+    }
+    if (dur > 86400) {
+      if (req.files) cleanupFiles(req.files);
+      return res.status(400).json({ error: 'invalid_duration', reason: 'Duration must be 86400 seconds (24h) or less' });
+    }
+
+    // Build URLs from uploaded files
+    const audioUrl = audioFile ? `/api/tracks/audio/${audioFile.filename}` : (req.body.audioUrl || '/assets/loop.mp3');
+    const coverUrl = coverFile ? `/api/covers/${coverFile.filename}` : (req.body.coverUrl || '');
+
     const track = db.createTrack({
       creatorId: req.user.id,
-      title,
-      description: description || '',
+      title: title.trim(),
+      description: (description || '').slice(0, 2000),
       audioUrl,
       durationSec: dur,
       pricePerSec: price,
       coverUrl,
-      category: category || 'general',
+      category: cat,
       status: status || 'published',
     });
-    console.log(`[upload] creator=${req.user.id} title="${title}" status=${status || 'published'} id=${track.id}`);
+
+    console.log(`[upload] creator=${req.user.id} title="${title}" status=${status} id=${track.id} audio=${audioUrl} cover=${coverUrl} dur=${dur}s`);
     // Notify creator
     db.createNotification({
       userId: req.user.id,
@@ -681,11 +904,32 @@ app.post('/api/creator/tracks', authMiddleware, upload.single('audio'), (req, re
       title: 'Track uploaded',
       body: `${title} is now ${status === 'published' ? 'live' : 'in drafts'}.`,
     });
-    res.json({ track });
+    res.json({
+      track,
+      detectedDurationSec: audioFile && (isNaN(parseInt(durationSec, 10)) || parseInt(durationSec, 10) <= 0) ? dur : null,
+    });
   } catch (err) {
-    console.error('[upload] failed:', err.message);
+    console.error('[upload] failed:', err.message, err.stack);
+    if (req.files) cleanupFiles(req.files);
     res.status(500).json({ error: 'upload_failed', reason: err.message });
   }
+});
+
+// Helper: delete uploaded files if request fails after upload
+function cleanupFiles(files) {
+  try {
+    if (files.audio) files.audio.forEach(f => { try { fs.unlinkSync(f.path); } catch {} });
+    if (files.cover) files.cover.forEach(f => { try { fs.unlinkSync(f.path); } catch {} });
+  } catch (e) {
+    console.warn('[upload] cleanup failed:', e.message);
+  }
+}
+
+// Serve cover images
+app.get('/api/covers/:filename', (req, res) => {
+  const filePath = path.join(COVER_DIR, req.params.filename);
+  if (!fs.existsSync(filePath)) return res.status(404).end();
+  res.sendFile(filePath);
 });
 
 // ─────────────────────────────────────────────────

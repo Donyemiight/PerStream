@@ -417,6 +417,41 @@
       uploadTrack(form, 'published');
     };
     draftBtn.onclick = () => uploadTrack(form, 'draft');
+
+    // Auto-detect audio duration when file is selected
+    const audioInput = form.querySelector('input[name="audio"]');
+    const durationInput = form.querySelector('input[name="durationSec"]');
+    if (audioInput && durationInput) {
+      audioInput.addEventListener('change', async () => {
+        const file = audioInput.files?.[0];
+        if (!file) return;
+        const detected = await detectAudioDuration(file);
+        if (detected && detected > 0) {
+          durationInput.value = Math.round(detected);
+          const hint = durationInput.parentElement.querySelector('.form-hint, .duration-hint');
+          if (hint) hint.textContent = `Auto-detected: ${Math.round(detected)}s from "${file.name}"`;
+          showToast(`Detected duration: ${Math.round(detected)}s`, 'info');
+        }
+      });
+    }
+  }
+
+  // Probe audio duration locally using HTML5 audio element
+  async function detectAudioDuration(file) {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(file);
+      const audio = document.createElement('audio');
+      audio.preload = 'metadata';
+      audio.onloadedmetadata = () => {
+        URL.revokeObjectURL(url);
+        resolve(audio.duration);
+      };
+      audio.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      audio.src = url;
+    });
   }
 
   async function uploadTrack(form, status) {
@@ -461,9 +496,27 @@
         } else {
           try {
             const err = JSON.parse(xhr.responseText);
-            statusDiv.innerHTML = `<div class="status-error">✗ ${err.error || 'Upload failed'}</div>`;
+            // Map error codes to user-friendly messages
+            const friendly = {
+              title_required: 'Please enter a title for your track',
+              title_too_long: 'Title must be 200 characters or less',
+              audio_file_required: 'Please select an audio file (MP3, WAV, or M4A)',
+              unsupported_file_format: err.reason || 'That file format is not supported. Try MP3, WAV, or M4A',
+              file_too_large: err.reason || 'File is too large (max 50MB)',
+              invalid_price: err.reason || 'Price must be between 1 and 10000 micro-USDC',
+              invalid_duration: err.reason || 'Duration is invalid',
+              unexpected_field: err.reason || 'Unexpected form field',
+              too_many_files: err.reason || 'Too many files',
+              upload_failed: err.reason || 'Upload failed',
+              missing_user_id: 'Please sign in to upload',
+              unknown_user: 'Session expired. Please sign in again',
+            };
+            const msg = friendly[err.error] || err.reason || err.error || 'Upload failed';
+            statusDiv.innerHTML = `<div class="status-error">✗ ${msg}<br><small style="opacity:0.7">${err.error || ''} ${err.reason ? '· ' + err.reason : ''}</small></div>`;
+            showToast(msg, 'error');
           } catch {
             statusDiv.innerHTML = `<div class="status-error">✗ Upload failed (HTTP ${xhr.status})</div>`;
+            showToast(`Upload failed (HTTP ${xhr.status})`, 'error');
           }
         }
       };
