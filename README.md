@@ -33,13 +33,17 @@ PerStream lets **creators** monetize audio from **listener #1** by charging USDC
 
 ## Try the live demo
 
+🌐 **Permanent demo URL (always up to date):**
+**https://donyemiight.github.io/PerStream/**
+
 | URL | Mode |
 |---|---|
-| **https://uvf411agm1at.space.minimax.io** | Frontend (talks to live backend) |
-| **https://label-musicians-addition-armed.trycloudflare.com** | Live Node.js backend (mock mode by default, real Arc testnet in `PAYMENTS_MODE=live`) |
+| **https://donyemiight.github.io/PerStream/** | Permanent production frontend — auto-deploys from GitHub |
+| **https://tired-minute-faster-grey.trycloudflare.com** | Live Node.js backend (mock mode by default, real Arc testnet in `PAYMENTS_MODE=live`) |
 
 > ⚠️ The backend URL uses a Cloudflare tunnel that
-> requires the local server to be running.
+> requires the local server to be running. If you see a connection error,
+> the tunnel may have rotated — the frontend auto-discovers new tunnels.
 > To run your own backend, follow the Quickstart below.
 > The frontend demo works in mock mode without a backend.
 
