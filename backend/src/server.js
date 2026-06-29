@@ -79,7 +79,12 @@ function getRequestBaseUrl(req) {
   }
   return `http://localhost:${PORT}`;
 }
-const AUDIO_DIR = process.env.AUDIO_DIR || path.join(__dirname, '..', 'data', 'audio');
+const AUDIO_DIR = (() => {
+  const env = process.env.AUDIO_DIR;
+  if (env && path.isAbsolute(env)) return env;
+  if (env && env.trim() !== '') return path.resolve(__dirname, '..', env);
+  return path.join(__dirname, '..', 'data', 'audio');
+})();
 const MAX_AUDIO_BYTES = parseInt(process.env.MAX_AUDIO_BYTES || '52428800', 10);
 
 // ───────────────────────────────────────────────
@@ -707,7 +712,7 @@ app.get('/api/agent/info', async (req, res) => {
     name: 'PerStream AI Listener Agent',
     description: 'An autonomous agent that pays per-second for audio on Arc',
     capabilities: [
-      'Provisions its own USDC wallet (Circle Agent Stack)',
+      'Provisions its own USDC wallet (viem deterministic key)',
       'Sets a daily listening budget',
       'Discovers tracks on PerStream',
       'Pays per-second via x402 + Circle Nanopayments',

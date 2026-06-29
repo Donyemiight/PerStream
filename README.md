@@ -1,7 +1,7 @@
 # PerStream
 
 > **Per-second USDC streaming paywall for podcasts and long-form audio.**
-> Built on **Circle Nanopayments** + **Arc testnet** + **x402** + **Agent Stack**.
+> Built on **Circle Nanopayments** + **Arc testnet** + **x402** + **viem embedded wallets**.
 
 **Tagline:** _Every second, paid._
 
@@ -26,7 +26,7 @@ PerStream lets **creators** monetize audio from **listener #1** by charging USDC
 ### Tech stack
 - **Circle Nanopayments** — gasless USDC micro-payments (as small as $0.000001)
 - **x402** — HTTP 402 paywall pattern, sponsor-aligned
-- **Circle Agent Stack** — embedded wallets (no MetaMask)
+- **viem embedded wallets** — deterministic, no MetaMask (Circle Agent Stack flow available when keys are provided)
 - **Arc testnet** — Circle's stablecoin-native L1 (chain ID 5042002)
 
 ---
@@ -206,7 +206,7 @@ PerStream/
 ### AI features
 - ✅ AI Listener Agent (`/api/agent/listen`, `/api/agent/auto`)
 - ✅ Autonomous multi-track discovery
-- ✅ Agent provisions its own wallet via Circle Agent Stack
+- ✅ Agent provisions its own wallet (viem deterministic key, no MetaMask)
 
 ### On-chain
 - ✅ Every per-second tick recorded in audit ledger
@@ -259,7 +259,7 @@ GET    /api/health                      → Service status
 |---|---|---|
 | **Nanopayments** | `backend/src/arc.js`, `backend/src/meter.js` | Sub-cent USDC transfers with batching |
 | **x402** | `/api/tracks/:id/stream`, `/api/agent/listen` | HTTP 402 paywall pattern |
-| **Agent Stack** | `backend/src/wallet.js`, `frontend/assets/app.js` | Embedded wallets, no seed phrases |
+| **Embedded wallets** | `backend/src/wallet.js` | viem deterministic per-user wallets; Circle Agent Stack path available when API keys are provided |
 | **Arc testnet** | All settlement txs | Stablecoin-native L1, sub-second finality |
 
 ---
@@ -351,7 +351,7 @@ All in `backend/.env` (see `.env.example`):
 | Backend | Node.js + Express | Termux-friendly, fastest to ship |
 | Database | sql.js (pure JS SQLite) | No native compile, runs on Termux |
 | Frontend | Vanilla HTML/JS/CSS | No build step, deploys anywhere |
-| Wallet | Circle Agent Stack + viem | Embedded, no MetaMask popup |
+| Wallet | viem (deterministic per-user) | Embedded, no MetaMask popup; Circle Agent Stack path available with API keys |
 | Payments | Circle Nanopayments | Gasless USDC, $0.000001 minimum |
 | Paywall | x402 (HTTP 402) | Standard, sponsor-aligned |
 | Chain | Arc testnet | Stablecoin-native, Circle's own L1 |

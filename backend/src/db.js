@@ -16,7 +16,16 @@ const fs = require('fs');
 const path = require('path');
 const initSqlJs = require('sql.js');
 
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'data', 'perstream.db');
+const DB_PATH = (() => {
+  const env = process.env.DB_PATH;
+  if (env && path.isAbsolute(env)) return env;
+  if (env && env.trim() !== '') {
+    // Resolve relative DB_PATH against the backend dir (where db.js lives)
+    return path.resolve(__dirname, '..', env);
+  }
+  // Default: backend/data/perstream.db (works regardless of CWD)
+  return path.join(__dirname, '..', 'data', 'perstream.db');
+})();
 
 // Ensure data dir exists
 const dbDir = path.dirname(DB_PATH);

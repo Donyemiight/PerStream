@@ -48,8 +48,7 @@ Response:
 ### `GET /api/auth/me`
 Returns the current user. Requires `X-User-Id`.
 
-### `POST /api/auth/logout`
-Clears session.
+> Note: Logout is client-side only — clears `localStorage` and reloads. No backend endpoint needed.
 
 ---
 
