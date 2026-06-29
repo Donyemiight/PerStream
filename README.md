@@ -35,8 +35,13 @@ PerStream lets **creators** monetize audio from **listener #1** by charging USDC
 
 | URL | Mode |
 |---|---|
-| **https://9tu56nbtqjro.space.minimax.io** | Frontend (talks to live backend) |
+| **https://uvf411agm1at.space.minimax.io** | Frontend (talks to live backend) |
 | **https://label-musicians-addition-armed.trycloudflare.com** | Live Node.js backend (mock mode by default, real Arc testnet in `PAYMENTS_MODE=live`) |
+
+> ⚠️ The backend URL uses a Cloudflare tunnel that
+> requires the local server to be running.
+> To run your own backend, follow the Quickstart below.
+> The frontend demo works in mock mode without a backend.
 
 ### Demo accounts
 - **Listener:** `demo-listener@perstream.fm`
