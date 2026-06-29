@@ -6,10 +6,22 @@
  */
 
 const PerStream = (() => {
-  const API_BASE = window.PERSTREAM_API ||
+  // API_BASE is mutable so we can recover from a dead tunnel URL.
+  // window.PERSTREAM_API is injected by every deployed HTML page; for
+  // localhost the user can hit the backend directly.
+  let API_BASE = window.PERSTREAM_API ||
     (window.location.hostname === 'localhost' || window.location.port
       ? 'http://localhost:3000'
       : `${window.location.protocol}//${window.location.host}`);
+
+  // Allow tunnel-discovery to swap the base URL at runtime.
+  if (typeof window !== 'undefined') {
+    window.__perstream_setApiBase = (newBase) => {
+      API_BASE = newBase;
+      window.PERSTREAM_API = newBase;
+      localStorage.setItem('perstream_known_tunnel', newBase);
+    };
+  }
 
   const STORAGE_KEY = 'perstream_user';
 
@@ -128,8 +140,33 @@ const PerStream = (() => {
 
   async function loadTracks() {
     const list = document.getElementById('tracks-list');
+    let r;
     try {
-      const r = await fetch(`${API_BASE}/api/tracks`);
+      r = await fetch(`${API_BASE}/api/tracks`);
+    } catch (err) {
+      // Tunnel might be down — try to recover via tunnel-discovery
+      console.warn('[loadTracks] fetch failed, attempting tunnel recovery:', err.message);
+      if (window.discoverTunnel) {
+        const newBase = await window.discoverTunnel();
+        if (newBase !== window.PERSTREAM_API) {
+          window.__perstream_setApiBase(newBase);
+          // Retry once with new base
+          try {
+            r = await fetch(`${newBase}/api/tracks`);
+          } catch (err2) {
+            list.innerHTML = `<div class="error">Failed to load tracks: ${err2.message}<br><small>Backend unreachable. Try refreshing the page.</small></div>`;
+            return;
+          }
+        } else {
+          list.innerHTML = `<div class="error">Failed to load tracks: ${err.message}<br><small>Backend unreachable. Try refreshing the page.</small></div>`;
+          return;
+        }
+      } else {
+        list.innerHTML = `<div class="error">Failed to load tracks: ${err.message}</div>`;
+        return;
+      }
+    }
+    try {
       const { tracks } = await r.json();
 
       if (!tracks.length) {
