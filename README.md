@@ -162,7 +162,6 @@ PerStream/
 │   ├── seed.js               Demo data
 │   ├── smoke-test.js         16-test suite
 │   ├── bundle.sh             Release tarball
-│   ├── push-to-github.sh     Auto-commit + push
 │   └── ...
 ├── docs/                     Full documentation
 │   ├── SPEC.md
