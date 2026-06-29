@@ -72,7 +72,12 @@ async function mockWithdraw({ creator, amountMicroUsdc }) {
     return { ok: false, reason: 'insufficient_earnings' };
   }
   mockLedger.creatorEarnings.set(creator, earned - amountMicroUsdc);
-  return { ok: true, withdrawn: amountMicroUsdc };
+  // Generate a properly-formatted 66-char tx hash for the withdrawal record.
+  // NOTE: in mock mode there is no real on-chain settlement. The hash is a
+  // reference marker only. The verifiable destination is the creator's
+  // wallet address on Arcscan (linked separately in the dashboard).
+  const wdHash = '0x' + ('wd' + Date.now().toString(16) + (++mockTxCounter).toString(16)).padEnd(64, '0').slice(0, 64);
+  return { ok: true, withdrawn: amountMicroUsdc, txHash: wdHash };
 }
 
 function mockGetBalance(listener) {

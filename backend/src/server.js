@@ -565,7 +565,14 @@ app.post('/api/creator/withdraw', authMiddleware, async (req, res) => {
       ...result,
       withdrawalId: wd.id,
       amountUsd: amount,
-      arcscanUrl: result.mintTxHash ? `https://testnet.arcscan.app/tx/${result.mintTxHash}` : null,
+      // Prefer the real on-chain tx hash (live mode). Fall back to the seller
+      // wallet address on Arcscan (mock mode — no on-chain settlement, but
+      // the seller wallet IS real and IS verifiable on Arcscan).
+      arcscanUrl: result.mintTxHash
+        ? `https://testnet.arcscan.app/tx/${result.mintTxHash}`
+        : (arc.getSellerAddress ? `https://testnet.arcscan.app/address/${arc.getSellerAddress()}` : null),
+      sellerAddress: arc.getSellerAddress ? arc.getSellerAddress() : null,
+      mode: arc.MODE,
     });
   } catch (err) {
     db.updateWithdrawalStatus(wd.id, 'failed');

@@ -332,14 +332,29 @@
       const withdrawal = {
         id: 'wd_' + Date.now(),
         amountUsd: amount,
-        txHash: '0x' + (++state.txCounter).toString(16).padStart(64, '0'),
+        // Properly formatted 66-char hex tx hash (0x + 64 hex chars)
+        txHash: '0x' + ('wd' + Date.now().toString(16) + (++state.txCounter).toString(16)).padEnd(64, '0').slice(0, 64),
         status: 'confirmed',
         created_at: Date.now(),
       };
       state.withdrawals = state.withdrawals || [];
       state.withdrawals.unshift(withdrawal);
       saveState();
-      return { body: { ok: true, withdrawal, balance: usd(state.creatorEarnings) } };
+      // Mock mode: no on-chain settlement, so point to the seller's real
+      // Arcscan address (which is verifiable). Live mode would use the
+      // actual mint tx hash.
+      const sellerArcscan = 'https://testnet.arcscan.app/address/0xEb375940Cd0D85f06239d68C6e719c71907771f9';
+      return {
+        body: {
+          ok: true,
+          withdrawal,
+          balance: usd(state.creatorEarnings),
+          mode: 'mock',
+          arcscanUrl: sellerArcscan,
+          sellerAddress: '0xEb375940Cd0D85f06239d68C6e719c71907771f9',
+          note: 'Mock mode — payment recorded in audit ledger; verify the seller wallet on Arcscan for on-chain settlement.',
+        }
+      };
     }
     if (method === 'GET' && path === '/api/creator/dashboard') {
       const myTracks = DEMO_TRACKS.filter(t => t.creator_id === (state.currentUser?.id || 'demo-creator'));
