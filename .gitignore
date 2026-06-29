@@ -7,3 +7,4 @@ data/
 *.placeholder.txt
 
 # Note: .env IS tracked (it's the bundled sample env, no real secrets)
+.github/workflows/
