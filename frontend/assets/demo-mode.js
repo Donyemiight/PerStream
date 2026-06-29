@@ -81,6 +81,13 @@
     let body = {};
     if (rawBody && typeof rawBody === 'string') {
       try { body = JSON.parse(rawBody); } catch (e) { body = {}; }
+      // Also handle url-encoded form data: "title=Foo&pricePerSec=200"
+      if (Object.keys(body).length === 0 && rawBody.includes('=')) {
+        try {
+          const params = new URLSearchParams(rawBody);
+          for (const [k, v] of params.entries()) body[k] = v;
+        } catch (e) { /* ignore */ }
+      }
     } else if (rawBody && typeof rawBody === 'object' && !(rawBody instanceof FormData)) {
       body = rawBody;
     }
@@ -108,9 +115,10 @@
       return { body: { user: state.currentUser } };;
     }
 
-    // GET /api/tracks
+    // GET /api/tracks — public listing, only published tracks (drafts hidden)
     if (method === 'GET' && path === '/api/tracks') {
-      return { body: { tracks: DEMO_TRACKS } };;
+      const publishedTracks = DEMO_TRACKS.filter(t => !t.status || t.status === 'published');
+      return { body: { tracks: publishedTracks } };;
     }
 
     // GET /api/tracks/:id
@@ -185,10 +193,12 @@
 
     // POST /api/listen/stop
     if (method === 'POST' && path === '/api/listen/stop') {
+      const session = state.activeSession;
       stopMeter();
+      state.activeSession = null;
       return { body: {
-        session: state.activeSession,
-        totalPaidUsd: usd(state.activeSession?.amountPaid || 0),
+        session,
+        totalPaidUsd: usd(session?.amountPaid || 0),
       } };;
     }
 
@@ -445,4 +455,34 @@
   }
   FakeXHR.prototype = RealXHR.prototype;
   window.XMLHttpRequest = FakeXHR;
+
+  // ──────────────────────────────────────────────
+  // Meter simulation (per-second tick)
+  // ──────────────────────────────────────────────
+  function startMeter(track) {
+    stopMeter();
+    state.meterInterval = setInterval(() => {
+      if (!state.activeSession) return;
+      const s = state.activeSession;
+      if (state.balance < s.pricePerSec) {
+        stopMeter();
+        return;
+      }
+      state.balance -= s.pricePerSec;
+      s.secondsPlayed += 1;
+      s.amountPaid += s.pricePerSec;
+      state.creatorEarnings += s.pricePerSec;
+    }, 1000);
+  }
+
+  function stopMeter() {
+    if (state.meterInterval) {
+      clearInterval(state.meterInterval);
+      state.meterInterval = null;
+    }
+    // Don't null out activeSession — let the caller decide (it may want to read the final values)
+  }
+
+  console.log('[demo mode] PerStream public preview — simulated backend active');
+  console.log('[demo mode] try logging in with demo-listener@perstream.fm');
 })();
