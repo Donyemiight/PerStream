@@ -253,6 +253,11 @@ const PerStream = (() => {
   // Always fetch fresh balance from server (single source of truth).
   // Called on page load and after every deposit.
   async function refreshBalance() {
+    // FIX 3 — prefer the local mock balance when demo mode is active
+    if (typeof window.__perstream_balance === 'number' && window.PERSTREAM_API === 'demo') {
+      document.getElementById('stat-balance').textContent = window.__perstream_balance.toFixed(6) + ' USDC';
+      return;
+    }
     try {
       const r = await authedFetch('/api/listen/balance');
       if (r.ok) {
@@ -639,8 +644,10 @@ const PerStream = (() => {
       // PAYMENT GATE — refuse to start unless the user has funded the session.
       // Reads the displayed balance (which we keep in sync with /api/listen/balance
       // via refreshBalance()). Anything <= 0 means no deposit yet.
+      // FIX 3 — also accept window.__perstream_balance (set by mockSignIn / demo-mode)
+      const mockBal = typeof window.__perstream_balance === 'number' ? window.__perstream_balance : null;
       const balanceText = document.getElementById('stat-balance')?.textContent || '0';
-      const balanceMicro = parseFloat(balanceText) || 0;
+      const balanceMicro = mockBal != null ? mockBal : (parseFloat(balanceText) || 0);
       if (balanceMicro <= 0) {
         showToast('Deposit USDC before starting playback', 'error');
         showError('Deposit at least $0.01 USDC before pressing Start Streaming.');
