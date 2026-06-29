@@ -49,24 +49,59 @@
     { id: 'demo-listener', handle: 'demo-listener', email: 'demo-listener@perstream.fm', wallet: '0xe6737b1cb6cdbc484fd11d658e664835a7673e46', role: 'listener' },
   ];
 
-  const DEMO_TRACKS = [
+  const SEED_TRACKS = [
     { id: 'trk-podcast', creator_id: 'demo-creator', title: 'Ep. 1: The Cold-Start Cliff — why per-second beats subscriptions', description: 'A full 4-minute 16-second podcast episode. How subscription media kills 90% of new shows, and how a per-second model flips the economics. Press play and let the meter run.', audioUrl: 'assets/podcast-full.mp3', duration_sec: 256, price_per_sec: 100, plays: 89, earnings_total: 2278400 },
     { id: 'trk-welcome', creator_id: 'demo-creator', title: 'PerStream Theme — 26-second welcome', description: 'A short welcome message. Use this to feel the per-second tick without committing time.', audioUrl: 'assets/welcome.mp3', duration_sec: 26, price_per_sec: 300, plays: 142, earnings_total: 4260000 },
     { id: 'trk-pitch', creator_id: 'demo-creator', title: 'Pitch: why pay per second?', description: 'A 25-second pitch explaining why your balance should only tick while audio plays.', audioUrl: 'assets/pitch.mp3', duration_sec: 25, price_per_sec: 500, plays: 89, earnings_total: 8910000 },
     { id: 'trk-loop', creator_id: 'demo-creator', title: 'Demo Loop — 17-second spoken test track', description: 'Press play, watch the meter tick, pause to stop. The whole point of PerStream in 17 seconds.', audioUrl: 'assets/loop.mp3', duration_sec: 17, price_per_sec: 100, plays: 256, earnings_total: 1280000 },
   ];
 
+  // Persistence helpers — uploaded tracks + withdrawals survive page refresh
+  const STORAGE_KEY = 'perstream_demo_state';
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return null;
+  }
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        tracks: DEMO_TRACKS,
+        creatorEarnings: state.creatorEarnings,
+        creatorWithdrawn: state.creatorWithdrawn,
+        withdrawals: state.withdrawals,
+        feedback: state.feedback,
+        leads: state.leads,
+        tickLedger: state.tickLedger.slice(-500),  // last 500 ticks
+        txCounter: state.txCounter,
+      }));
+    } catch (e) {}
+  }
+  // Reset to fresh seed state
+  function resetState() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    location.reload();
+  }
+  // Initialize DEMO_TRACKS — restore from localStorage if available, else seed
+  const stored = loadState();
+  const DEMO_TRACKS = (stored && stored.tracks) ? stored.tracks : SEED_TRACKS.slice();
+
   const state = {
     currentUser: null,
     balance: 0,                    // listener's USDC deposit (micro-USDC)
-    creatorEarnings: 0,            // creator's accumulated earnings (micro-USDC)
+    creatorEarnings: (stored && stored.creatorEarnings) || 0,  // creator's accumulated earnings (micro-USDC)
+    creatorWithdrawn: (stored && stored.creatorWithdrawn) || 0, // cumulative withdrawn (micro-USDC)
     activeSession: null,
     meterInterval: null,
     listenerInterval: null,
-    feedback: [],                   // user ratings + comments (in-memory only)
-    leads: [],                     // early-access signups
-    tickLedger: [],                // per-second payment audit trail (in-memory)
-    txCounter: 0,                  // for mock tx hash generation
+    feedback: (stored && stored.feedback) || [],  // user ratings + comments
+    leads: (stored && stored.leads) || [],         // early-access signups
+    tickLedger: (stored && stored.tickLedger) || [], // per-second payment audit trail
+    txCounter: (stored && stored.txCounter) || 0,  // mock tx hash counter
+    notifications: [],
+    withdrawals: (stored && stored.withdrawals) || [],  // withdrawal history
   };
 
   function usd(amount) { return (amount || 0) / 1_000_000; }
@@ -168,6 +203,7 @@
     if (method === 'POST' && path === '/api/listen/deposit') {
       const amount = micro(parseFloat(body.amountUsd || 0));
       state.balance += amount;
+      saveState();
       return { body: { ok: true, balance: state.balance } };;
     }
 
@@ -231,6 +267,7 @@
         earnings_total: 0,
       };
       DEMO_TRACKS.unshift(newTrack);
+      saveState();
       return { body: { track: newTrack } };;
     }
     // PUT /api/creator/tracks/:id — update track
@@ -239,6 +276,7 @@
       const t = DEMO_TRACKS.find(x => x.id === id);
       if (!t) return { body: { error: 'not_found' }, status: 404 };;
       Object.assign(t, body);
+      saveState();
       return { body: { track: t } };;
     }
     // DELETE /api/creator/tracks/:id — delete track
@@ -247,6 +285,7 @@
       const idx = DEMO_TRACKS.findIndex(x => x.id === id);
       if (idx === -1) return { body: { error: 'not_found' }, status: 404 };;
       DEMO_TRACKS.splice(idx, 1);
+      saveState();
       return { body: { ok: true } };;
     }
     // POST /api/creator/tracks/:id/status — publish/unpublish
@@ -255,6 +294,7 @@
       const t = DEMO_TRACKS.find(x => x.id === id);
       if (!t) return { body: { error: 'not_found' }, status: 404 };;
       t.status = body.status || 'published';
+      saveState();
       return { body: { track: t } };;
     }
     // GET /api/creator/profile
@@ -277,12 +317,40 @@
     if (method === 'GET' && path === '/api/creator/withdrawals') {
       return { body: { withdrawals: state.withdrawals || [] } };;
     }
+
+    // POST /api/creator/withdraw — withdraw available earnings
+    if (method === 'POST' && path === '/api/creator/withdraw') {
+      const requested = parseFloat(body.amountUsd || 0);
+      const available = usd(state.creatorEarnings);
+      const amount = Math.min(requested, available);
+      if (amount <= 0) {
+        return { body: { error: 'insufficient_balance', available: available }, status: 400 };
+      }
+      const amountMicro = micro(amount);
+      state.creatorEarnings -= amountMicro;
+      state.creatorWithdrawn = (state.creatorWithdrawn || 0) + amountMicro;
+      const withdrawal = {
+        id: 'wd_' + Date.now(),
+        amountUsd: amount,
+        txHash: '0x' + (++state.txCounter).toString(16).padStart(64, '0'),
+        status: 'confirmed',
+        created_at: Date.now(),
+      };
+      state.withdrawals = state.withdrawals || [];
+      state.withdrawals.unshift(withdrawal);
+      saveState();
+      return { body: { ok: true, withdrawal, balance: usd(state.creatorEarnings) } };
+    }
     if (method === 'GET' && path === '/api/creator/dashboard') {
+      const myTracks = DEMO_TRACKS.filter(t => t.creator_id === (state.currentUser?.id || 'demo-creator'));
       return { body: {
         creator: state.currentUser,
         earningsLive: usd(state.creatorEarnings),
         earningsRecorded: usd(state.creatorEarnings),
-        tracks: DEMO_TRACKS,
+        available: usd(state.creatorEarnings),
+        withdrawn: usd(state.creatorWithdrawn || 0),
+        tracks: myTracks,
+        withdrawals: state.withdrawals || [],
         feedback: {
           total: state.feedback.length,
           average: state.feedback.length
@@ -472,6 +540,24 @@
       s.secondsPlayed += 1;
       s.amountPaid += s.pricePerSec;
       state.creatorEarnings += s.pricePerSec;
+      // Update per-track stats — Issue 3 fix
+      const track = DEMO_TRACKS.find(t => t.id === s.trackId);
+      if (track) {
+        track.plays = (track.plays || 0) + 1;
+        track.earnings_total = (track.earnings_total || 0) + s.pricePerSec;
+      }
+      // Record in tick ledger
+      state.txCounter += 1;
+      state.tickLedger.push({
+        ts: Date.now(),
+        trackId: s.trackId,
+        listener: state.currentUser?.id || 'demo-listener',
+        creator: track?.creator_id || 'demo-creator',
+        amountMicro: s.pricePerSec,
+        txHash: '0x' + state.txCounter.toString(16).padStart(64, '0'),
+      });
+      // Persist after each tick so refresh doesn't lose data
+      saveState();
     }, 1000);
   }
 
