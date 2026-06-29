@@ -97,7 +97,6 @@
 
     // POST /api/auth/login
     if (method === 'POST' && path === '/api/auth/login') {
-      const body = JSON.parse(opts.body || '{}');
       const email = body.email || '';
       const user = DEMO_USERS.find(u => u.email === email) || DEMO_USERS[1];
       state.currentUser = { ...user };
@@ -159,7 +158,6 @@
 
     // POST /api/listen/deposit
     if (method === 'POST' && path === '/api/listen/deposit') {
-      const body = JSON.parse(opts.body || '{}');
       const amount = micro(parseFloat(body.amountUsd || 0));
       state.balance += amount;
       return { body: { ok: true, balance: state.balance } };;
@@ -167,7 +165,6 @@
 
     // POST /api/listen/start
     if (method === 'POST' && path === '/api/listen/start') {
-      const body = JSON.parse(opts.body || '{}');
       const track = DEMO_TRACKS.find(t => t.id === body.trackId);
       if (!track) return { body: { error: 'not_found' }, status: 404 };;
       state.activeSession = {
@@ -208,7 +205,6 @@
     // GET /api/creator/dashboard
     // POST /api/creator/tracks — create track
     if (method === 'POST' && path === '/api/creator/tracks') {
-      const body = JSON.parse(opts.body || '{}');
       const newTrack = {
         id: 'trk_demo_' + Date.now(),
         creator_id: state.currentUser ? state.currentUser.id : 'demo-creator',
@@ -230,7 +226,6 @@
     // PUT /api/creator/tracks/:id — update track
     if (method === 'PUT' && path.match(/^\/api\/creator\/tracks\/[^/]+$/)) {
       const id = path.split('/').pop();
-      const body = JSON.parse(opts.body || '{}');
       const t = DEMO_TRACKS.find(x => x.id === id);
       if (!t) return { body: { error: 'not_found' }, status: 404 };;
       Object.assign(t, body);
@@ -247,7 +242,6 @@
     // POST /api/creator/tracks/:id/status — publish/unpublish
     if (method === 'POST' && path.match(/^\/api\/creator\/tracks\/[^/]+\/status$/)) {
       const id = path.split('/')[4];
-      const body = JSON.parse(opts.body || '{}');
       const t = DEMO_TRACKS.find(x => x.id === id);
       if (!t) return { body: { error: 'not_found' }, status: 404 };;
       t.status = body.status || 'published';
@@ -259,7 +253,6 @@
     }
     // PUT /api/creator/profile
     if (method === 'PUT' && path === '/api/creator/profile') {
-      const body = JSON.parse(opts.body || '{}');
       return { body: { profile: { id: 'demo', handle: 'demo', ...body } } };;
     }
     // GET /api/creator/notifications
@@ -293,7 +286,6 @@
 
     // POST /api/feedback
     if (method === 'POST' && path === '/api/feedback') {
-      const body = JSON.parse(opts.body || '{}');
       const rating = parseInt(body.rating, 10);
       if (!rating || rating < 1 || rating > 5) {
         return { body: { error: 'rating must be 1-5' }, status: 400 };;
@@ -323,12 +315,11 @@
 
     // GET /api/feedback
     if (method === 'GET' && path === '/api/feedback') {
-      return { body: { feedback: state.feedback.slice(-parseInt(req.query.limit || '50', 10)).reverse() } };;
+      return { body: { feedback: state.feedback.slice(-parseInt(qs.get('limit') || '50', 10)).reverse() } };;
     }
 
     // POST /api/lead
     if (method === 'POST' && path === '/api/lead') {
-      const body = JSON.parse(opts.body || '{}');
       if (!body.email || !body.email.includes('@')) {
         return { body: { error: 'valid email required' }, status: 400 };;
       }
