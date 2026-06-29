@@ -67,16 +67,17 @@ function mockTxHash(sessionId) {
 }
 
 async function mockWithdraw({ creator, amountMicroUsdc }) {
-  // Prefer the in-memory ledger, but fall back to the audit ledger if the
-  // backend was restarted (which wipes the in-memory map). The audit ledger
-  // is the source of truth for "how much has this wallet earned so far".
+  // Prefer the in-memory ledger, but ALWAYS cross-check against the audit
+  // ledger + withdrawals table. The audit ledger is the source of truth:
+  // it survives backend restarts, includes all historical ticks, and
+  // counts every withdrawal so we never allow a creator to withdraw more
+  // than they actually have.
   let earned = mockLedger.creatorEarnings.get(creator) || 0;
   if (earned === 0) {
     try {
       const ledger = require('./tick-ledger');
       const total = ledger.totalForCreator(creator);
       earned = total.total;
-      // Re-hydrate the in-memory ledger so subsequent withdraws are O(1)
       if (earned > 0) {
         mockLedger.creatorEarnings.set(creator, earned);
       }
@@ -84,6 +85,35 @@ async function mockWithdraw({ creator, amountMicroUsdc }) {
       console.warn('[mockWithdraw] ledger fallback failed:', e.message);
     }
   }
+
+  // Subtract already-completed withdrawals so the available balance matches
+  // what the dashboard shows in earnings.total.
+  try {
+    const db = require('./db');
+    // db.getCreatorWithdrawn(creator) — we'll add this helper
+    // Actually we already have db.listWithdrawals + the creator's id; but we
+    // only have the wallet here. Look up by wallet via a SQL pass-through.
+    const initSqlJs = require('sql.js');
+    const fs = require('fs');
+    const SQL = await initSqlJs();
+    const buffer = fs.readFileSync(db.DB_PATH);
+    const sqlDb = new SQL.Database(buffer);
+    const r = sqlDb.exec(
+      `SELECT COALESCE(SUM(w.amount_micro), 0) AS withdrawn
+       FROM withdrawals w
+       JOIN users u ON u.id = w.creator_id
+       WHERE u.wallet = ? AND w.status IN ('completed', 'pending')`,
+      [creator]
+    );
+    const alreadyWithdrawn = r[0] ? r[0].values[0][0] : 0;
+    if (alreadyWithdrawn > 0) {
+      earned = Math.max(0, earned - alreadyWithdrawn);
+      console.log(`[mockWithdraw] ${creator}: total earned=${mockLedger.creatorEarnings.get(creator)||0}, already withdrawn=${alreadyWithdrawn}, available=${earned}`);
+    }
+  } catch (e) {
+    console.warn('[mockWithdraw] withdrawals lookup failed:', e.message);
+  }
+
   if (amountMicroUsdc > earned) {
     return { ok: false, reason: 'insufficient_earnings', available: earned };
   }

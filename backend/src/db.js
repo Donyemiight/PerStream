@@ -466,6 +466,17 @@ function listWithdrawals(creatorId, limit = 50) {
   return rowsFromStmt(stmt);
 }
 
+function sumCompletedWithdrawals(creatorId) {
+  const stmt = db.prepare(
+    `SELECT COALESCE(SUM(amount_micro), 0) AS total
+     FROM withdrawals
+     WHERE creator_id = ? AND status IN ('completed', 'pending')`
+  );
+  stmt.bind([creatorId]);
+  const row = firstRow(stmt);
+  return row ? row.total : 0;
+}
+
 function updateWithdrawalStatus(id, status, txHash = null) {
   db.run(`UPDATE withdrawals SET status = ?, tx_hash = COALESCE(?, tx_hash) WHERE id = ?`, [status, txHash, id]);
   persist();
@@ -645,6 +656,7 @@ module.exports = {
   init,
   ready,
   flushSync,
+  DB_PATH,
   // user
   createUser,
   getUser,
@@ -673,6 +685,7 @@ module.exports = {
   createWithdrawal,
   getWithdrawal,
   listWithdrawals,
+  sumCompletedWithdrawals,
   updateWithdrawalStatus,
   // notifications
   createNotification,

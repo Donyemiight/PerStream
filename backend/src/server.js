@@ -639,7 +639,12 @@ app.get('/api/listen/balance', authMiddleware, async (req, res) => {
 
 app.get('/api/creator/dashboard', authMiddleware, (req, res) => {
   const tracks = db.listTracks({ creatorId: req.user.id });
-  const earningsTotal = arc.getCreatorEarnings(req.user.wallet);
+  // Authoritative lifetime earnings (audit ledger + sessions table).
+  // Use these as the source of truth for "earningsLive" too, so the
+  // dashboard survives backend restarts.
+  const lifetime = tickLedger.totalForCreator(req.user.wallet);
+  const completedWithdrawals = db.sumCompletedWithdrawals(req.user.id);
+  const earningsTotalMicro = Math.max(0, lifetime.total - completedWithdrawals);
   const dbEarningsTotal = db.getCreatorEarnings(req.user.id);
 
   // Per-track analytics
@@ -661,13 +666,12 @@ app.get('/api/creator/dashboard', authMiddleware, (req, res) => {
   const weekMs = 7 * dayMs;
   const monthMs = 30 * dayMs;
   const today = tracks.filter(t => (t.created_at || 0) >= now - dayMs).length;
-  // Lifetime earnings from audit ledger — stream the full file so we don't
-// miss earnings recorded before the in-memory 1000-tick window rolled over.
-  const lifetime = tickLedger.totalForCreator(req.user.wallet);
-  const totalAmountMicro = lifetime.total;
-  const todayMicro = lifetime.today;
-  const weekMicro = lifetime.thisWeek;
-  const monthMicro = lifetime.thisMonth;
+  // Lifetime earnings from audit ledger — already computed above as `lifetime`.
+  // completedWithdrawals already computed above.
+  const totalAmountMicro = Math.max(0, lifetime.total - completedWithdrawals);
+  const todayMicro = Math.max(0, lifetime.today - Math.min(completedWithdrawals, lifetime.today));
+  const weekMicro = Math.max(0, lifetime.thisWeek - Math.min(completedWithdrawals, lifetime.thisWeek));
+  const monthMicro = Math.max(0, lifetime.thisMonth - Math.min(completedWithdrawals, lifetime.thisMonth));
 
   // Most streamed tracks
   const mostStreamed = [...trackStats].sort((a, b) => (b.plays || 0) - (a.plays || 0)).slice(0, 5);
@@ -685,7 +689,7 @@ app.get('/api/creator/dashboard', authMiddleware, (req, res) => {
     mode: arc.isLive() ? 'live' : 'mock',
     sellerAddress: arc.getSellerAddress(),
     arcscanBase: process.env.ARCSCAN_BASE || 'https://testnet.arcscan.app',
-    earningsLive: arc.microToUsd(earningsTotal),
+    earningsLive: arc.microToUsd(earningsTotalMicro),
     earningsRecorded: arc.microToUsd(dbEarningsTotal),
     earnings: {
       total: arc.microToUsd(totalAmountMicro),
