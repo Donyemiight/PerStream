@@ -134,8 +134,8 @@ const PerStream = (() => {
         role: isCreator ? 'creator' : 'listener',
       };
       saveUser(mockUser);
-      // Pre-set starting balance for listeners
-      window.__perstream_balance = 5.0;
+      // Pre-set starting balance for listeners — enough to demonstrate many ticks
+      window.__perstream_balance = 500.0;
       return mockUser;
     }
   }
