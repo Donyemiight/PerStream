@@ -1,0 +1,8 @@
+# PerStream
+
+Per-second USDC streaming paywall for podcasts.
+
+🌐 **Demo:** https://donyemiight.github.io/PerStream/
+
+This is a Github Pages demo of PerStream running in fully simulated mode
+(no backend required). All UX flows are identical to the live backend.
