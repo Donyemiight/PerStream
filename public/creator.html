@@ -8,7 +8,7 @@
   [id*="minimax" i],
   [class*="minimax" i] { display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }
 </style>
-<script>window.PERSTREAM_API = "https://tired-minute-faster-grey.trycloudflare.com";</script><script>
+<script>
   // Aggressively remove the watermark element as soon as it appears
   (function() {
     function remove() {
@@ -31,7 +31,7 @@
   <title>Creator Dashboard — PerStream</title>
   <meta name="description" content="Manage your PerStream tracks, view earnings, and withdraw USDC. The full creator workflow for the per-second streaming paywall.">
   <link rel="icon" type="image/svg+xml" href="assets/prism.svg">
-  <link rel="stylesheet" href="assets/styles.css?v=pages1">
+  <link rel="stylesheet" href="assets/styles.css?v=98n">
 </head>
 <body class="creator-page">
   <!-- Top status bar -->
@@ -394,7 +394,8 @@
           </div>
           <div class="footer-col">
             <div class="footer-col-title">Contact</div>
-            <a href="mailto:hello@perstream.fm">hello@perstream.fm</a>
+            <a href="https://x.com/DonYemiight" target="_blank" rel="noopener">Twitter/X ↗</a>
+            <span class="footer-contact-text">@DonYemiight</span>
           </div>
         </div>
       </div>
@@ -417,12 +418,14 @@
   <!-- Toast container -->
   <div id="toast-container"></div>
 
-  <script src="assets/error-overlay.js?v=pages1"></script>
-  
-  <script src="assets/feedback-widget.js?v=pages1"></script>
-  <script src="assets/tunnel-discovery.js?v=pages1"></script>
-<script src="assets/landing.js?v=pages1"></script>
-  <script src="assets/creator.js?v=pages1"></script>
+  <script src="assets/error-overlay.js?v=98n"></script>
+  <script src="assets/demo-mode.js?v=98n"></script>
+  <script src="assets/feedback-widget.js?v=98n"></script>
+  <script src="assets/tunnel-discovery.js?v=topbar1"></script>
+  <script src="assets/topbar-fix.js?v=topbar1"></script>
+<script src="assets/landing.js?v=topbar1"></script>
+  <script src="assets/creator.js?v=topbar1"></script>
+  <script src="assets/perstream-fixes.js?v=fix1"></script>
   <script>
     // Hide page loader once everything is loaded (with robust fallback)
     function hidePageLoader() {
