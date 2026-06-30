@@ -34,17 +34,13 @@ PerStream lets **creators** monetize audio from **listener #1** by charging USDC
 ## Try the live demo
 
 | URL | Mode |
-|-----|------|
-| **https://donyemiight.github.io/PerStream/** | Static demo — fully functional mock mode, no backend needed |
-| **https://donyemiight.github.io/PerStream/listen.html** | Listener experience — simulated per-second USDC ticking |
-| **https://donyemiight.github.io/PerStream/creator.html** | Creator Dashboard — mock earnings and analytics |
+|---|---|
+| **https://donyemiight.github.io/PerStream** | Primary live demo (GitHub Pages, permanent) |
+| **https://qtcrgy0u1o9s.space.minimax.io** | Mirror demo (MiniMax sandbox) |
 
-> The backend (Node.js) runs locally. See Quickstart below to run
-> with real Arc testnet settlement. The GitHub Pages demo runs in
-> simulated mode — all UX flows are identical, payments are mocked.
-> requires the local server to be running. If you see a connection error,
-> the tunnel may have rotated — the frontend auto-discovers new tunnels.
-> To run your own backend, follow the Quickstart below.
+> ⚠️ Both demos run in mock mode by default (frontend-only, 
+> no backend required). For real Arc testnet settlement, 
+> clone the repo and run the backend locally — see Quickstart below.
 > The frontend demo works in mock mode without a backend.
 
 ### Demo accounts
