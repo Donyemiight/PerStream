@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Hackathon](https://img.shields.io/badge/Lepton%20Agents-RFB%204-00d4ff)](https://www.leptonagents.com)
 [![Chain](https://img.shields.io/badge/Arc-Testnet-ff00aa)](https://testnet.arcscan.app)
-[![Status](https://img.shields.io/badge/Status-Live%20on%20Arc-10b981)]()
+[![Status](https://img.shields.io/badge/Status-Demo%20on%20Arc%20Testnet-10b981)](https://donyemiight.github.io/PerStream/)
 
 Built for the **Lepton Agents Hackathon (Canteen × Circle, June 15–29, 2026)**.
 **Track:** RFB 4 — Streaming & Continuous Payments (also fits RFB 6 — AI as Economic Actors).
@@ -35,13 +35,14 @@ PerStream lets **creators** monetize audio from **listener #1** by charging USDC
 
 | URL | Mode |
 |---|---|
-| **https://donyemiight.github.io/PerStream** | Primary live demo (GitHub Pages, permanent) |
-| **https://qtcrgy0u1o9s.space.minimax.io** | Mirror demo (MiniMax sandbox) |
+| **https://donyemiight.github.io/PerStream/** | Static Demo – Fully functional mock mode (no backend required) |
+| **https://donyemiight.github.io/PerStream/listen.html** | Listener Experience – Simulated per-second USDC streaming |
+| **https://donyemiight.github.io/PerStream/creator.html** | Creator Dashboard – Mock creator earnings and analytics |
 
-> ⚠️ Both demos run in mock mode by default (frontend-only, 
-> no backend required). For real Arc testnet settlement, 
-> clone the repo and run the backend locally — see Quickstart below.
-> The frontend demo works in mock mode without a backend.
+Note: The Node.js backend is intended for local development and real
+Arc Testnet settlement. The GitHub Pages deployment runs in a polished
+client-side Demo Mode so judges can experience the complete workflow
+without requiring a backend.
 
 ### Demo accounts
 - **Listener:** `demo-listener@perstream.fm`
@@ -163,6 +164,8 @@ PerStream/
 │   ├── smoke-test.js         21-test suite
 │   ├── bundle.sh             Release tarball
 │   └── ...
+├── public/                   Static frontend bundle for Pages
+├── deploy/                   Deployment configs (Dockerfile, cloudflared)
 ├── docs/                     Full documentation
 │   ├── SPEC.md
 │   ├── API.md                All 34 endpoints
